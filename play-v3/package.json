@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test rules.test.js motion.test.js locomotion.test.js"
+  }
+}
