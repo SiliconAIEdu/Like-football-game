@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import {GLTFLoader} from './vendor/loaders/GLTFLoader.js';
 import {clone} from './vendor/utils/SkeletonUtils.js';
 import {mergeGeometries} from './vendor/utils/BufferGeometryUtils.js';
 
@@ -11,9 +10,9 @@ const POSES=[['seated','Seated',.8],['rising','Rise',.65],['standing','Idle',.7]
 
 export class HumanCrowd {
  constructor(scene){this.scene=scene;this.batches=[];this.close=[];this.ready=false;this.mood=0;this.moodTime=-100;this.dummy=new THREE.Object3D();}
- async load(){
-  const loader=new GLTFLoader();
-  const files=await Promise.all([1,2,3].map(async n=>({full:await loader.loadAsync(`assets/crowd/fan-${n}.glb?v=3-mocap-final`),low:await loader.loadAsync(`assets/crowd/fan-${n}-lod.glb?v=3-mocap-final`)})));
+ async load(getModel){
+  const variants=[1,2,3];
+  const lowModels=await Promise.all(variants.map(n=>getModel(`assets/crowd/fan-${n}-lod.glb`)));
   const allSeats=[];
   for(let type=0;type<3;type++){
    const fans=[];
@@ -33,15 +32,17 @@ export class HumanCrowd {
     add(side*(16+row*1.4),.63+row*.73,-16+col*1.25,-side*Math.PI/2,2000+side*500+row*26+col);
    }
    for(const [pose,clip,t] of POSES){
-    for(const {geometry,material} of this.bake(files[type].low,clip,t)){
+    for(const {geometry,material} of this.bake(lowModels[type],clip,t)){
      const mesh=new THREE.InstancedMesh(geometry,material,fans.length);
      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.receiveShadow=true;mesh.visible=false;
      this.scene.add(mesh);this.batches.push({mesh,fans,pose});
     }
    }
   }
+  const fullModels=await Promise.all(variants.map((n,index)=>
+   getModel(`assets/crowd/fan-${n}.glb`).catch(()=>lowModels[index])));
   for(let i=0;i<5;i++){
-   const source=files[i%3].full,model=clone(source.scene);
+   const source=fullModels[i%3],model=clone(source.scene);
    const bounds=new THREE.Box3().setFromObject(model),scale=1.73/(bounds.max.y-bounds.min.y);
    model.scale.multiplyScalar(scale);model.position.y=-bounds.min.y*scale;
    const root=new THREE.Group();root.add(model);root.position.set((i-2)*.93,1.36,-21.45);root.rotation.y=(i-2)*-.025;this.scene.add(root);

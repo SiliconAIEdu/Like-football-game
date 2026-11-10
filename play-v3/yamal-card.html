@@ -383,7 +383,7 @@
   });
 </script>
 <script type="module">
-import {players,cardDesign,rememberCardCustomization} from './roster.js?v=4b';
+import {players,cardDesign,rememberCardCustomization,loadPortrait} from './roster.js?v=4c';
 const id=new URLSearchParams(location.search).get('player');
 const player=players.find(p=>p.id===id&&p.id!=='yamal'&&p.id!=='ronaldo');
 if(player){
@@ -400,7 +400,7 @@ if(player){
  document.querySelector('.number').textContent=number;
  document.querySelector('.collection span:first-child').textContent=design.label;
  document.querySelector('.collection span:last-child').textContent='NO. '+number;
- document.querySelector('.player').src=player.image;
+ loadPortrait(document.querySelector('.player'),player.image);
  document.querySelector('.player').alt=player.name;
  document.querySelector('.copy .latin').textContent=player.full;
  document.querySelector('.copy h1').textContent=player.name;
