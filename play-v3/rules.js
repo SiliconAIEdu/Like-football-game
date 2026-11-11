@@ -49,12 +49,25 @@ export const refScenarios=[{foul:true,title:'从身后推倒对手',explain:'防
 
 export function strikeRoot(ball,yaw,contact,scale=1){return{x:ball.x-scale*(contact.x*Math.cos(yaw)+contact.z*Math.sin(yaw)),y:0,z:ball.z-scale*(-contact.x*Math.sin(yaw)+contact.z*Math.cos(yaw))}}
 
+function shuffled(items,random){
+ const result=[...items];
+ for(let i=result.length-1;i>0;i--){
+  const j=Math.floor(random()*(i+1));
+  [result[i],result[j]]=[result[j],result[i]];
+ }
+ return result;
+}
+
+// Keep a full set of practice shots while varying their order and exact targets.
+export function randomKeeperTargets(random=Math.random){
+ return shuffled([-1,-1,1,1,0],random).map(side=>({
+  x:side===0?(random()*2-1)*2.7:side*(2.8+random()*.6),
+  y:side===0?.35+random()*.3:2+random()*.24,
+  z:GOAL_Z
+ }));
+}
+
 // Shuffle once per match so replay and judging share the same scenario.
 export function randomRefScenarios(random=Math.random){
-  const scenarios=[...refScenarios];
-  for(let i=scenarios.length-1;i>0;i--){
-    const j=Math.floor(random()*(i+1));
-    [scenarios[i],scenarios[j]]=[scenarios[j],scenarios[i]];
-  }
-  return scenarios;
+ return shuffled(refScenarios,random);
 }
