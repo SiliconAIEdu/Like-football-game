@@ -2,6 +2,17 @@ export const GOAL_Z=-14,GOAL_HALF=3.66,GOAL_HEIGHT=2.44;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const GRAVITY=9.81;
 
+// The reticle indicates the intended target. Harder shots trade accuracy for speed.
+export function shotTarget(aim,power,random=Math.random){
+ const overhit=clamp((power-.65)/.35,0,1);
+ const spread=.26+.43*overhit*overhit;
+ return {
+  x:aim.x+(random()*2-1)*spread,
+  y:Math.max(.12,aim.y+(random()*2-1)*spread*.8),
+  z:aim.z
+ };
+}
+
 export function flight(start,target,power=.65){
  const speed=13+power*13;
  const distance=Math.hypot(target.x-start.x,target.z-start.z);
