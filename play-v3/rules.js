@@ -62,7 +62,7 @@ function shuffled(items,random){
 export function randomKeeperTargets(random=Math.random){
  return shuffled([-1,-1,1,1,0],random).map(side=>({
   x:side===0?(random()*2-1)*2.7:side*(2.8+random()*.6),
-  y:side===0?.35+random()*.3:2+random()*.24,
+  y:side===0?.22+random()*.43:2+random()*.28,
   z:GOAL_Z
  }));
 }

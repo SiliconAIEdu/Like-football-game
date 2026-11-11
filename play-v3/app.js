@@ -4,14 +4,14 @@ import {Locomotion,sampleRoot,rootInWorld,wrapAngle} from './locomotion.js?v=3j'
 import {players,buildRoster,cardDesign} from './roster.js?v=4c';
 import {FootballWorld} from './world.js?v=4f';
 import {MatchAudio} from './audio.js?v=3j';
-import {clamp,flight,flightPoint,inGoal,sweptContact,GRAVITY,randomRefScenarios,randomKeeperTargets,shotTarget,GOAL_Z,strikeRoot} from './rules.js?v=4j';
+import {clamp,flight,flightPoint,inGoal,sweptContact,GRAVITY,randomRefScenarios,randomKeeperTargets,shotTarget,GOAL_Z,strikeRoot} from './rules.js?v=4m';
 const $=s=>document.querySelector(s),screens=[...document.querySelectorAll('.screen')],audio=new MatchAudio(),keys=new Set();
 let locomotion,npcMotion;
 const reboundVelocity=new THREE.Vector3();
 const ronaldoDribble=new RonaldoDribble();
 let reboundActive=false,aiDiveUsed=false;const rollingVelocity=new THREE.Vector3();let lastTouch=-1,shotPending=false;
 let world;try{world=new FootballWorld($('#world'))}catch(e){$('#fatal').hidden=false;$('#fatal').textContent='球场未能启动。请使用支持三维图形的浏览器，并开启硬件加速后重试。';throw e}
-const roles={player:{name:'球员',title:'五球，征服全场。',goal:'自由带球，寻找角度。五次射门，尽可能多地得分。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动　<kbd>Shift</kbd> 加速</div><div>点击球门锁定落点，或用方向键微调</div><div>拖动滑杆调力度，力度过高更容易踢偏，再点击「射门」；长按 <kbd>空格</kbd> 可蓄力</div><div>触屏：左侧方向键跑动，点球门选落点，再点「射门」</div>',label:'射门挑战',max:5},keeper:{name:'门将',title:'你的球门，你来守。',goal:'五次来球，观察出脚方向，移动或扑救。',instruction:'<div><kbd>A</kbd><kbd>D</kbd> 左右移动</div><div><kbd>空格</kbd> 扑救，遇到高球会起跳</div><div>站在球路上可以直接挡球，扑救范围更大</div><div>触屏：左侧方向键移动，右侧按钮扑救</div>',label:'守门挑战',max:5},referee:{name:'裁判',title:'看清每一次接触。',goal:'四次争球，跟随跑动，判断是否犯规。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动观察</div><div><kbd>F</kbd> 鸣哨判犯规　<kbd>C</kbd> 比赛继续</div><div>争球结束后可直接判罚，也可点击「再看一次」</div><div>触屏：点击下方的判罚按钮</div>',label:'执法挑战',max:4}};
+const roles={player:{name:'球员',title:'五球，征服全场。',goal:'自由带球，寻找角度。五次射门，尽可能多地得分。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动　<kbd>Shift</kbd> 加速</div><div>点击球门锁定落点，或用方向键微调</div><div>拖动滑杆调力度，力度过高更容易踢偏，再点击「射门」；长按 <kbd>空格</kbd> 可蓄力</div><div>触屏：左侧方向键跑动，点球门选落点，再点「射门」</div>',label:'射门挑战',max:5},keeper:{name:'门将',title:'你的球门，你来守。',goal:'五次来球，观察出脚方向，移动或扑救。',instruction:'<div><kbd>A</kbd><kbd>D</kbd> 左右移动</div><div><kbd>空格</kbd> 扑救，遇到高球会起跳，贴地球会压低身体</div><div>站在球路上可以直接挡球，扑救范围更大</div><div>触屏：左侧方向键移动，右侧按钮扑救</div>',label:'守门挑战',max:5},referee:{name:'裁判',title:'看清每一次接触。',goal:'四次争球，跟随跑动，判断是否犯规。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动观察</div><div><kbd>F</kbd> 鸣哨判犯规　<kbd>C</kbd> 比赛继续</div><div>争球结束后可直接判罚，也可点击「再看一次」</div><div>触屏：点击下方的判罚按钮</div>',label:'执法挑战',max:4}};
 let refRounds=[],refReplayT=null;
 let keeperTargets=[];
 let chosen=players[0],loadedId=null,loadSerial=0;
@@ -65,8 +65,16 @@ function beginAction(){
   const keeper=world.player;
   const intercept=phase==='shooting'&&strikePlayed&&ballFlight?keeperIntercept(keeper):null;
   const targetX=intercept?.point.x??world.ball.position.x;
-  const direction=keeperInput()||Math.sign(targetX-keeper.root.position.x)||1;
-  startDive(keeper,direction,intercept?.high?highDive:lowDive);
+  const delta=targetX-keeper.root.position.x;
+  const input=keeperInput();
+  const centralJump=!input&&intercept?.high&&Math.abs(delta)<=.65;
+  const direction=centralJump?0:input||Math.sign(delta)||1;
+  const profile=centralJump?centerJump:intercept?.high?highDive:
+   intercept&&intercept.point.y<.95?groundDive:lowDive;
+  // Shorten a low dive when the keeper is already close to the ball's path.
+  const distance=profile===groundDive&&direction*delta>0?
+   clamp((Math.abs(delta)-.75)/.70,.55,profile.distance):profile.distance;
+  startDive(keeper,direction,profile,distance);
   audio.tone(170,.12,'triangle',.06);
  }
 }
@@ -202,13 +210,12 @@ if(phase==='shooting'&&ballFlight)updateShot(world.player,world.opponent,dt);
 
 const keeperReactionTimes=[.15,.28,.19,.33,.22];
 const lowDive={distance:1.75,lift:.18,tilt:.43};
-const highDive={distance:2.55,lift:.88,tilt:.18,quickPush:true};
-const aiLowDive={distance:2.35,lift:.06,tilt:.69,quickPush:true};
-const aiHighDive={...highDive,lift:1.02};
-const aiCenterJump={distance:0,lift:.52,tilt:0};
+const highDive={distance:2.55,lift:1.02,tilt:.18,quickPush:true};
+const groundDive={distance:2.35,lift:.06,tilt:.69,quickPush:true};
+const centerJump={distance:0,lift:.52,tilt:0};
 const aiMidDive={distance:2.45,lift:.43,tilt:.35,quickPush:true};
 
-function startDive(keeper,direction,profile=lowDive){
+function startDive(keeper,direction,profile=lowDive,distance=profile.distance){
  diveT=0;
  diveDir=direction;
  keeper.root.rotation.y=0;
@@ -216,6 +223,7 @@ function startDive(keeper,direction,profile=lowDive){
  keeper.diveReach={
   target:new THREE.Vector3(position.x+direction*1.55,1.15,position.z+.32),
   weight:0,
+  distance,
   profile
  };
  if(keeper===world.player)velocity.x=0;
@@ -235,9 +243,9 @@ function advanceDive(keeper,dt){
  diveT+=dt;
  const progress=clamp(diveT/.86,0,1);
  keeper.diveReach.weight=Math.min(clamp(progress/.22,0,1),clamp((1-progress)/.25,0,1));
- const {profile}=keeper.diveReach;
+ const {profile,distance}=keeper.diveReach;
  const travel=t=>profile.quickPush?t*t*(6+t*(-8+3*t)):t*t*(3-2*t);
- keeper.root.position.x=clamp(keeper.root.position.x+diveDir*profile.distance*(travel(progress)-travel(previous)),-4,4);
+ keeper.root.position.x=clamp(keeper.root.position.x+diveDir*distance*(travel(progress)-travel(previous)),-4,4);
  keeper.root.position.y=profile.lift*Math.sin(progress*Math.PI);
  keeper.root.rotation.z=-diveDir*profile.tilt*Math.sin(progress*Math.PI);
  if(progress===1){
@@ -299,7 +307,7 @@ function updateShot(shooter,keeper,dt){
   const delta=point.x-keeper.root.position.x;
   const remaining=interceptTime-flightT;
   const centralJump=high&&Math.abs(delta)<=.65;
-  const profile=centralJump?aiCenterJump:high?aiHighDive:point.y<.95?aiLowDive:aiMidDive;
+  const profile=centralJump?centerJump:high?highDive:point.y<.95?groundDive:aiMidDive;
   const canReach=centralJump||(Math.abs(delta)>.55&&Math.abs(delta)<profile.distance+.75);
   if(remaining>0&&remaining<.49&&canReach){
    aiDiveUsed=true;
