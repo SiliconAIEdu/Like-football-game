@@ -197,14 +197,19 @@ function tickPlayer(dt){if(phase==='playing'){shotTime+=dt;moveActor(dt);rollBal
 if(phase==='shooting'&&ballFlight)updateShot(world.player,world.opponent,dt);
 }
 
-function startDive(keeper,direction){
+const keeperReactionTimes=[.15,.28,.19,.33,.22];
+const lowDive={distance:1.75,lift:.18,tilt:.43};
+const highDive={distance:2.55,lift:.88,tilt:.18};
+
+function startDive(keeper,direction,profile=lowDive){
  diveT=0;
  diveDir=direction;
  keeper.root.rotation.y=0;
  const position=keeper.root.position;
  keeper.diveReach={
   target:new THREE.Vector3(position.x+direction*1.55,1.15,position.z+.32),
-  weight:0
+  weight:0,
+  profile
  };
  if(keeper===world.player)velocity.x=0;
  const action=direction>0?'divemirror':'dive';
@@ -218,10 +223,11 @@ function advanceDive(keeper,dt){
  diveT+=dt;
  const progress=clamp(diveT/.86,0,1);
  keeper.diveReach.weight=Math.min(clamp(progress/.22,0,1),clamp((1-progress)/.25,0,1));
- const travel=t=>t*t*(3-2*t);
- keeper.root.position.x=clamp(keeper.root.position.x+diveDir*1.75*(travel(progress)-travel(previous)),-4,4);
- keeper.root.position.y=.18*Math.sin(progress*Math.PI);
- keeper.root.rotation.z=-diveDir*.43*Math.sin(progress*Math.PI);
+ const {profile}=keeper.diveReach;
+ const travel=t=>profile===highDive?t*t*(6+t*(-8+3*t)):t*t*(3-2*t);
+ keeper.root.position.x=clamp(keeper.root.position.x+diveDir*profile.distance*(travel(progress)-travel(previous)),-4,4);
+ keeper.root.position.y=profile.lift*Math.sin(progress*Math.PI);
+ keeper.root.rotation.z=-diveDir*profile.tilt*Math.sin(progress*Math.PI);
  if(progress===1){
   diveT=-1;
   keeper.diveReach=null;
@@ -268,20 +274,23 @@ function updateShot(shooter,keeper,dt){
  if(!updateStrike(shooter,dt))return;
  const ball=world.ball.position;
  const next=flightPoint(ballFlight,flightT);
- if(role==='player'&&flightT>[.16,.24,.19,.28,.21][round]&&diveT<0&&!aiDiveUsed){
-  const delta=ballFlight.target.x-keeper.root.position.x;
-  const remaining=ballFlight.duration-flightT;
-  if(remaining<.53&&Math.abs(delta)>.65&&Math.abs(delta)<2.5){
+ const plane=keeper.root.position.z+.32;
+ const fraction=clamp((plane-ballFlight.start.z)/(ballFlight.target.z-ballFlight.start.z),0,1);
+ const interceptTime=fraction*ballFlight.duration;
+ const point=flightPoint(ballFlight,interceptTime);
+ if(role==='player'&&flightT>keeperReactionTimes[round]&&diveT<0&&!aiDiveUsed){
+  const delta=point.x-keeper.root.position.x;
+  const high=point.y>1.75&&inGoal(ballFlight.target);
+  const remaining=interceptTime-flightT;
+  const reach=high?3.3:2.5;
+  if(remaining>0&&remaining<.49&&Math.abs(delta)>.65&&Math.abs(delta)<reach){
    aiDiveUsed=true;
-   startDive(keeper,Math.sign(delta));
+   startDive(keeper,Math.sign(delta),high?highDive:lowDive);
   }else{
    moveKeeper(keeper,clamp(delta*5,-2.2,2.2),dt,3.4);
   }
  }
  if(diveT>=0){
-  const plane=keeper.root.position.z+.32;
-  const fraction=clamp((plane-ballFlight.start.z)/(ballFlight.target.z-ballFlight.start.z),0,1);
-  const point=flightPoint(ballFlight,fraction*ballFlight.duration);
   keeper.diveReach.target.set(point.x,point.y,point.z);
   world.updateActorPose(keeper,dt);
   keeper.poseUpdated=true;
