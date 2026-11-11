@@ -2,15 +2,18 @@ export const GOAL_Z=-14,GOAL_HALF=3.66,GOAL_HEIGHT=2.44;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const GRAVITY=9.81;
 
+export const BEST_POWER_MIN=.55,BEST_POWER_MAX=.70;
+
 export function stepCharge(power,direction,dt){
- const next=clamp(power+direction*dt*.7,0,1);
+ const next=clamp(power+direction*dt*.45,0,1);
  return {power:next,direction:next===1?-1:next===0?1:direction};
 }
 
 // The reticle indicates the intended target. Harder shots trade accuracy for speed.
 export function shotTarget(aim,power,random=Math.random){
- const overhit=clamp((power-.65)/.35,0,1);
- const spread=.26+.43*overhit*overhit;
+ const overhit=clamp((power-BEST_POWER_MAX)/(1-BEST_POWER_MAX),0,1);
+ const underhit=clamp((BEST_POWER_MIN-power)/BEST_POWER_MIN,0,1);
+ const spread=.22+.47*overhit*overhit+.14*underhit*underhit;
  return {
   x:aim.x+(random()*2-1)*spread,
   y:Math.max(.12,aim.y+(random()*2-1)*spread*.8),

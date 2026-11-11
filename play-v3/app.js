@@ -4,7 +4,7 @@ import {Locomotion,sampleRoot,rootInWorld,wrapAngle} from './locomotion.js?v=3j'
 import {players,buildRoster,cardDesign} from './roster.js?v=4c';
 import {FootballWorld} from './world.js?v=4f';
 import {MatchAudio} from './audio.js?v=3j';
-import {clamp,flight,flightPoint,inGoal,sweptContact,GRAVITY,randomRefScenarios,randomKeeperTargets,shotTarget,stepCharge,GOAL_Z,strikeRoot} from './rules.js?v=4n';
+import {clamp,flight,flightPoint,inGoal,sweptContact,GRAVITY,randomRefScenarios,randomKeeperTargets,shotTarget,stepCharge,BEST_POWER_MIN,BEST_POWER_MAX,GOAL_Z,strikeRoot} from './rules.js?v=4o';
 const $=s=>document.querySelector(s),screens=[...document.querySelectorAll('.screen')],audio=new MatchAudio(),keys=new Set();
 let locomotion,npcMotion;
 const reboundVelocity=new THREE.Vector3();
@@ -41,13 +41,20 @@ $('#pause').onclick=()=>togglePause();$('#resume').onclick=()=>togglePause(false
 function announce(title='',detail='',small=''){ $('#event-title').textContent=title;$('#event-detail').textContent=detail;$('#event-small').textContent=small;$('#event').style.opacity=title?'1':'0'}
 function updateScore(){const r=roles[role];$('#score').innerHTML=`${score} <em>/ ${r.max}</em>`;$('#round-label').textContent=`第 ${Math.min(round+1,r.max)} / ${r.max} ${role==='referee'?'次判罚':'球'}`;$('#round-dots').innerHTML=Array.from({length:r.max},(_,i)=>`<i class="${i<results.length?(results[i]?'win':'lose'):i===round?'current':''}"></i>`).join('')}
 const powerSlider=$('#power');
+const powerValue=$('#power-value');
+const bestPowerMin=Math.round(BEST_POWER_MIN*100);
+const bestPowerMax=Math.round(BEST_POWER_MAX*100);
+powerSlider.style.setProperty('--best-power-min',bestPowerMin+'%');
+powerSlider.style.setProperty('--best-power-max',bestPowerMax+'%');
+$('#power-sweet-spot').textContent=`最佳 ${bestPowerMin}–${bestPowerMax}%`;
 let selectedPower=.65;
 let chargeDirection=1;
 function updatePower(){
  const shown=Math.round((charging?power:selectedPower)*100);
  powerSlider.value=shown;
  powerSlider.setAttribute('aria-valuetext',shown+'%');
- $('#power-value').textContent=shown+'%';
+ powerValue.textContent=shown+'%';
+ powerValue.classList.toggle('power-in-range',shown>=bestPowerMin&&shown<=bestPowerMax);
 }
 powerSlider.addEventListener('input',()=>{
  selectedPower=powerSlider.valueAsNumber/100;

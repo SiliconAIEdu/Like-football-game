@@ -35,10 +35,17 @@ test('keeper practice shuffles two high shots on each side and a low shot',()=>{
 test('holding the shot key cycles from zero to full power and back',()=>{
  let state={power:0,direction:1};
  const endpoints=[];
- for(let frame=0;frame<100;frame++){
+ for(let frame=0;frame<150;frame++){
   state=stepCharge(state.power,state.direction,.05);
   if(state.power===0||state.power===1)endpoints.push(state.power);
  }
  assert.deepEqual(endpoints,[1,0,1]);
  assert.ok(state.power>0&&state.power<1&&state.direction===-1);
+});
+
+test('the marked power band is more accurate than very weak or full power',()=>{
+ const aim={x:0,y:1,z:-14};
+ const offset=power=>shotTarget(aim,power,()=>.99).x;
+ assert.equal(offset(.55),offset(.70));
+ assert.ok(offset(.65)<offset(.1)&&offset(.65)<offset(1));
 });

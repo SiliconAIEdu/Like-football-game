@@ -14,3 +14,7 @@ body[data-role=keeper] .touch-pad .up,body[data-role=keeper] .touch-pad [data-ke
 h1:focus,h2:focus{outline:none}.player-card.photo img{object-position:center top!important}
 
 #aim-status{font-size:12px;color:#f3e6cd;line-height:1.5;margin:0 0 10px;text-align:center;text-shadow:0 2px 5px #000}body:not([data-role=player]) #aim-status{display:none}.action:disabled{cursor:default}
+
+/* The green strip follows the same scale as the power slider above it. */
+.power-track{background:linear-gradient(to right,transparent var(--best-power-min),#8ce4ad var(--best-power-min),#8ce4ad var(--best-power-max),transparent var(--best-power-max)) center bottom / 100% 3px no-repeat}
+#power-sweet-spot,.power-in-range{color:#a4efbf}
