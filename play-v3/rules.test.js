@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {flight,flightPoint,inGoal,keeperReach,stepCharge,shotTarget,randomKeeperTargets,refScenarios,randomRefScenarios} from './rules.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {flight,flightPoint,movingContact,inGoal,keeperReach,stepCharge,shotTarget,randomKeeperTargets,refScenarios,randomRefScenarios} from './rules.js';
 test('shot reaches its aimed position and respects posts/crossbar',()=>{const start={x:0,y:.22,z:3},target={x:2,y:1,z:-14},f=flight(start,target,.7);assert.deepEqual(flightPoint(f,0),start);const end=flightPoint(f,f.duration);assert.ok(Math.abs(end.y-target.y)<1e-8);assert.equal(end.z,-14);assert.equal(inGoal(end),true);assert.equal(inGoal({x:4,y:1}),false);assert.equal(inGoal({x:0,y:2.6}),false)});
 test('a keeper can save a reachable ball but not cover the whole goal',()=>{assert.equal(keeperReach({x:2.8,y:1},0,false),false);assert.equal(keeperReach({x:2.8,y:1},2.6,false),true);assert.equal(keeperReach({x:2.8,y:1.9},1.8,true),true);assert.equal(keeperReach({x:2.8,y:1.9},1.8,false),false)});
 test('referee challenge includes foul and fair-play decisions',()=>{assert.equal(refScenarios.length,4);assert.equal(refScenarios.filter(s=>s.foul).length,2);assert.ok(refScenarios.every(s=>s.explain.length>10))});
@@ -48,4 +48,12 @@ test('the marked power band is more accurate than very weak or full power',()=>{
  const offset=power=>shotTarget(aim,power,()=>.99).x;
  assert.equal(offset(.55),offset(.70));
  assert.ok(offset(.65)<offset(.1)&&offset(.65)<offset(1));
+});
+
+test('a moving glove can intercept the ball between frames without saving a nearby miss',()=>{
+ const from={x:0,y:1,z:1},to={x:0,y:1,z:-1};
+ const previous={x:-.4,y:1,z:0},current={x:.4,y:1,z:0};
+ const hit=movingContact(from,to,previous,current,.16);
+ assert.ok(hit>0&&hit<.5);
+ assert.equal(movingContact(from,to,{...previous,y:1.3},{...current,y:1.3},.16),null);
 });

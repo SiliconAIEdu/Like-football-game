@@ -51,6 +51,15 @@ export function sweptContact(from,to,center,radius){
  return hit<=1?hit:null;
 }
 
+// Sweep in the glove's frame so the ball and glove can both move between poses.
+export function movingContact(from,to,previous,current,radius){
+ return sweptContact(from,{
+  x:to.x-(current.x-previous.x),
+  y:to.y-(current.y-previous.y),
+  z:to.z-(current.z-previous.z)
+ },previous,radius);
+}
+
 export function inGoal(p){return Math.abs(p.x)<GOAL_HALF-.12&&p.y>.1&&p.y<GOAL_HEIGHT-.12}
 export function keeperReach(ball,keeperX,diving){return Math.abs(ball.x-keeperX)<(diving?1.25:.47)&&ball.y<(diving?2.3:1.7)}
 export const refScenarios=[{foul:true,title:'从身后推倒对手',explain:'防守队员从背后推人，没有触到球，应判犯规。',type:'push'},{foul:false,title:'干净地抢到球',explain:'防守队员先触球，随后带球离开，没有造成犯规接触。',type:'clean'},{foul:true,title:'伸腿绊倒对手',explain:'防守队员没有碰到球，伸腿绊倒了带球队员。',type:'trip'},{foul:false,title:'合理的肩部争抢',explain:'双方在争球距离内肩对肩接触，没有推搡或拉拽，比赛继续。',type:'shoulder'}];
