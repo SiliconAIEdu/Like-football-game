@@ -1,3 +1,4 @@
+import {mirrorKeeperDive} from './keeper-motion.js';
 import {PlayerAppearance,addUniformDetail} from './player-appearance.js?v=3x';
 import * as THREE from 'three';
 import {fitPlayerLandmarks,styleYamalMaterial} from './face-landmarks.js?v=3x';
@@ -69,6 +70,8 @@ export class FootballWorld{
   this.motionData=motionData;
   if(strikeContract)this.strikeContract=strikeContract;
   this.motionClips=[...ronaldo.animations];
+  const dive=ronaldo.animations.find(clip=>clip.name==='Dive_Ronaldo_Rig');
+  if(dive)this.motionClips.push(mirrorKeeperDive(dive));
   this.motionSource=ronaldo.scene;
   this.emotionSource=emotions?.scene;
   for(const [name,from,end] of [['ReactGoal','Cheer',168],['ReactMiss','Disappointed',180]]){

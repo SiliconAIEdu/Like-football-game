@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {QUICK_KICK_START,RonaldoDribble} from './ronaldo-motion.js?v=3w';
 import {Locomotion,sampleRoot,rootInWorld,wrapAngle} from './locomotion.js?v=3j';
 import {players,buildRoster,cardDesign} from './roster.js?v=4c';
-import {FootballWorld} from './world.js?v=4c';
+import {FootballWorld} from './world.js?v=4e';
 import {MatchAudio} from './audio.js?v=3j';
 import {clamp,flight,flightPoint,inGoal,sweptContact,GRAVITY,randomRefScenarios,GOAL_Z,strikeRoot} from './rules.js?v=3r';
 const $=s=>document.querySelector(s),screens=[...document.querySelectorAll('.screen')],audio=new MatchAudio(),keys=new Set();
@@ -55,7 +55,18 @@ function startMatch(){selectedPower=.65;if(role==='referee')refRounds=randomRefS
 function resetRound(){ronaldoDribble.reset();reboundActive=false;aiDiveUsed=false;refReplayT=null;$('#ref-replay').disabled=true;$('#aim-status').textContent='点击球门选择落点';$('#action').textContent=role==='keeper'?'扑救！':'射门';locomotion?.reset();npcMotion?.reset();rollingVelocity.set(0,0,0);shotPending=false;world.player.strike=null;world.player.reactionUntil=0;phase='countdown';phaseT=0;world.endCutaway();document.body.dataset.cutaway='false';$('#broadcast').hidden=true;velocity.set(0,0,0);shotTime=0;ballFlight=null;flightT=0;diveT=-1;power=0;charging=false;world.ball.visible=true;world.player.root.rotation.set(0,role==='keeper'?0:Math.PI+(world.motionInfo('kick')?.root?.[0]?.yaw||0),0);world.opponent.root.rotation.set(0,Math.PI,0);world.setSpeed(world.player,1);world.setSpeed(world.opponent,1);world.extra.root.rotation.set(0,Math.PI/2,0);world.animate(world.player,'idle');world.animate(world.opponent,'idle');world.animate(world.extra,'idle');if(role==='player'){world.player.root.position.set((round%3-1)*1.5,0,3);world.opponent.root.position.set(0,0,-13.3);world.opponent.root.rotation.y=0;aim={x:round%2? -1.8:1.8,y:1.15,z:GOAL_Z};const contact=world.motionData?.kick?.contact||{x:.12,z:.85};world.ball.position.set(world.player.root.position.x-contact.x*chosen.height/1.87,.12,world.player.root.position.z-contact.z*chosen.height/1.87);const heading=Math.atan2(aim.x-world.ball.position.x,aim.z-world.ball.position.z),ready=strikeRoot(world.ball.position,heading,contact,chosen.height/1.87);world.player.root.position.set(ready.x,0,ready.z);world.player.root.rotation.y=heading+(world.motionInfo('kick')?.root?.[0]?.yaw||0);world.aim.position.set(aim.x,aim.y,GOAL_Z+.05)}else if(role==='keeper'){world.player.root.position.set(0,0,-13.2);world.opponent.root.position.set((round%3-1)*2,0,-1);const contact=world.motionData?.kick?.contact||{x:0,z:.6};world.ball.position.set(world.opponent.root.position.x-contact.x*world.opponent.height/1.87,.12,world.opponent.root.position.z-contact.z*world.opponent.height/1.87)}else{world.player.root.position.set(3.8,0,.5);world.player.root.rotation.y=-Math.PI/2;placeRefScene(0);$('#foul').disabled=true;$('#play-on').disabled=true}announce('准备好了吗？',role==='player'?'靠近足球，瞄准球门，再把握出脚时机':role==='keeper'?'观察来球，随时准备扑救':'跟上球员，留意争球时的接触',`ROUND ${round+1}`);updateScore();updatePower()}
 function finishRound(win,title,detail){if(phase==='feedback'||phase==='done')return;results.push(win);if(win)score++;phase='feedback';phaseT=0;charging=false;power=0;updatePower();world.aim.visible=false;if(diveT<0||role!=='keeper')world.setSpeed(world.player,1);if(diveT<0||role!=='player')world.setSpeed(world.opponent,1);if(win||role!=='player')world.animate(world.opponent,'idle');world.crowdReaction(win);audio.crowd(win);if(role!=='referee'){world.startCutaway(win,role);$('#broadcast').hidden=false;document.body.dataset.cutaway='true';$('#broadcast-label').textContent=win?'球星特写':'场边镜头';}announce(title,detail,win?'WELL PLAYED':'NEXT CHANCE');updateScore();if(role==='player'){world.player.reactionName=win?'reactgoal':'reactmiss';if(!world.player.strike){world.animate(world.player,world.player.reactionName,true,true);world.player.reactionUntil=worldTime+2.8;}}}
 function finishMatch(){phase='done';go('results');const max=roles[role].max;$('#result-title').textContent=score===max?'全场，为你沸腾。':score>=Math.ceil(max*.6)?'精彩表现！':'下一场，更进一步。';$('#result-score').innerHTML=`${score} <span>/ ${max}</span>`;$('#result-desc').textContent=role==='player'?`${chosen.name}完成 ${max} 次射门，打进 ${score} 球。${score<max?'试着换个角度，把球送进远角。':'每一次机会，你都把握住了。'}`:role==='keeper'?`你成功守住了 ${score} 次来球。${score<max?'提早移动，最后一刻再扑救。':'这座球门，由你守护。'}`:`你作出了 ${score} 次正确判罚。${score<max?'留意防守队员先碰到的是球，还是对手。':'清晰判断，让比赛更精彩。'}`;audio.whistle()}
-function beginAction(){if(screen!=='match'||paused)return;if(role==='player'&&phase==='playing'){charging=true;power=.12}else if(role==='keeper'&&(phase==='playing'||phase==='shooting')&&diveT<0){const direction=keys.has('KeyA')||keys.has('ArrowLeft')?1:keys.has('KeyD')||keys.has('ArrowRight')?-1:(world.ball.position.x-world.player.root.position.x>=0?1:-1);startDive(world.player,direction);audio.tone(170,.12,'triangle',.06)}}
+function beginAction(){
+ if(screen!=='match'||paused)return;
+ if(role==='player'&&phase==='playing'){
+  charging=true;
+  power=.12;
+ }else if(role==='keeper'&&(phase==='playing'||phase==='shooting')&&diveT<0){
+  const targetX=strikePlayed&&ballFlight ? ballFlight.target.x : world.ball.position.x;
+  const direction=keeperInput()||Math.sign(targetX-world.player.root.position.x)||1;
+  startDive(world.player,direction);
+  audio.tone(170,.12,'triangle',.06);
+ }
+}
 function releaseAction(){if(!charging)return;charging=false;if(screen==='match'&&!paused&&role==='player'&&phase==='playing')shoot();power=0;updatePower()}
 function beginStrike(actor,target,power){
  const info=world.motionInfo('kick'),contract=world.motionData?.kick||world.strikeContract;
@@ -146,11 +157,18 @@ function moveKeeper(actor,speed,dt,limit){
  world.setSpeed(actor,moving?clamp(Math.abs(stride)/walkSpeed,.45,1.9):1);
 }
 
+function keeperInput(){
+ // The camera behind the goal sees world +X on the left.
+ const left=keys.has('KeyA')||keys.has('ArrowLeft');
+ const right=keys.has('KeyD')||keys.has('ArrowRight');
+ return Number(left)-Number(right);
+}
+
 function moveActor(dt){
  let dx=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),dz=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
  if(role==='keeper'){
-  if(diveT>=0)return;dx=-dx;if(keys.has('ArrowLeft'))dx=1;if(keys.has('ArrowRight'))dx=-1;
-  velocity.x=THREE.MathUtils.damp(velocity.x,dx*2.5,9,dt);
+  if(diveT>=0)return;
+  velocity.x=THREE.MathUtils.damp(velocity.x,keeperInput()*2.5,9,dt);
   moveKeeper(world.player,velocity.x,dt,3.4);
   return;
  }
@@ -183,19 +201,21 @@ function startDive(keeper,direction){
  diveT=0;
  diveDir=direction;
  keeper.root.rotation.y=0;
- const duration=keeper.actions.dive?.getClip().duration||.86;
+ if(keeper===world.player)velocity.x=0;
+ const action=direction>0?'divemirror':'dive';
+ const duration=keeper.actions[action]?.getClip().duration||.86;
  world.setSpeed(keeper,duration/.86);
- world.animate(keeper,'dive',true,true);
+ world.animate(keeper,action,true,true);
 }
 
 function advanceDive(keeper,dt){
  const previous=clamp(diveT/.86,0,1);
  diveT+=dt;
  const progress=clamp(diveT/.86,0,1);
- const travel=t=>1-Math.pow(1-t,2);
+ const travel=t=>t*t*(3-2*t);
  keeper.root.position.x=clamp(keeper.root.position.x+diveDir*1.75*(travel(progress)-travel(previous)),-4,4);
- keeper.root.position.y=.24*Math.sin(progress*Math.PI);
- keeper.root.rotation.z=-diveDir*.68*Math.sin(progress*Math.PI);
+ keeper.root.position.y=.18*Math.sin(progress*Math.PI);
+ keeper.root.rotation.z=-diveDir*.43*Math.sin(progress*Math.PI);
  if(progress===1){
   diveT=-1;
   keeper.root.position.y=0;

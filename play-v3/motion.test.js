@@ -46,3 +46,47 @@ test('player face exports working eyelid and gaze geometry',()=>{
  assert.equal(eyes.length,4,'both irises and pupils follow gaze');
  for(const eye of eyes)for(const name of ['LookLeft','LookRight','LookUp','LookDown'])assert.ok(eye.extras.targetNames.includes(name));
 });
+
+test('keeper dive poses reach toward the same side as their travel',async()=>{
+ const THREE=await import('../vendor/three.module.js');
+ const {mirrorKeeperDive}=await import('./keeper-motion.js');
+ const dive=gltf.animations.find(animation=>animation.name==='Dive_Ronaldo_Rig');
+ const binaryOffset=28+bytes.readUInt32LE(12);
+ function readAccessor(index,size){
+  const accessor=gltf.accessors[index];
+  const view=gltf.bufferViews[accessor.bufferView];
+  const offset=binaryOffset+(view.byteOffset||0)+(accessor.byteOffset||0);
+  return Float32Array.from({length:accessor.count*size},(_,i)=>bytes.readFloatLE(offset+4*i));
+ }
+ const tracks=dive.channels.flatMap(({sampler,target})=>{
+  if(target.path==='scale')return [];
+  const {input,output}=dive.samplers[sampler];
+  const rotation=target.path==='rotation';
+  const Track=rotation?THREE.QuaternionKeyframeTrack:THREE.VectorKeyframeTrack;
+  const property=rotation?'quaternion':'position';
+  return [new Track(gltf.nodes[target.node].name+'.'+property,readAccessor(input,1),readAccessor(output,rotation?4:3))];
+ });
+ const original=new THREE.AnimationClip(dive.name,-1,tracks);
+ const mirrored=mirrorKeeperDive(original);
+ function pose(clip){
+  const nodes=gltf.nodes.map(node=>{
+   const bone=new THREE.Object3D();
+   bone.name=node.name;
+   if(node.translation)bone.position.fromArray(node.translation);
+   if(node.rotation)bone.quaternion.fromArray(node.rotation);
+   return bone;
+  });
+  gltf.nodes.forEach((node,index)=>node.children?.forEach(child=>nodes[index].add(nodes[child])));
+  const root=nodes.find(node=>node.name==='Root');
+  const mixer=new THREE.AnimationMixer(root);
+  mixer.clipAction(clip).play();
+  mixer.setTime(clip.duration/2);
+  return Object.fromEntries(['head','hand_l','hand_r'].map(name=>[
+   name,root.getObjectByName(name).getWorldPosition(new THREE.Vector3()).x
+  ]));
+ }
+ const negative=pose(original),positive=pose(mirrored);
+ assert.ok(negative.head<-.25&&positive.head>.25);
+ assert.ok(Math.abs(negative.hand_l+positive.hand_r)<.001);
+ assert.ok(Math.abs(negative.hand_r+positive.hand_l)<.001);
+});
