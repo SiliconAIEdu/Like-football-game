@@ -203,7 +203,9 @@ if(phase==='shooting'&&ballFlight)updateShot(world.player,world.opponent,dt);
 const keeperReactionTimes=[.15,.28,.19,.33,.22];
 const lowDive={distance:1.75,lift:.18,tilt:.43};
 const highDive={distance:2.55,lift:.88,tilt:.18,quickPush:true};
-const aiLowDive={distance:2.35,lift:.14,tilt:.54,quickPush:true};
+const aiLowDive={distance:2.35,lift:.06,tilt:.69,quickPush:true};
+const aiHighDive={...highDive,lift:1.02};
+const aiCenterJump={distance:0,lift:.52,tilt:0};
 const aiMidDive={distance:2.45,lift:.43,tilt:.35,quickPush:true};
 
 function startDive(keeper,direction,profile=lowDive){
@@ -217,6 +219,11 @@ function startDive(keeper,direction,profile=lowDive){
   profile
  };
  if(keeper===world.player)velocity.x=0;
+ if(direction===0){
+  world.setSpeed(keeper,1);
+  world.animate(keeper,'idle');
+  return;
+ }
  const action=direction>0?'divemirror':'dive';
  const duration=keeper.actions[action]?.getClip().duration||.86;
  world.setSpeed(keeper,duration/.86);
@@ -291,10 +298,12 @@ function updateShot(shooter,keeper,dt){
  if(role==='player'&&flightT>keeperReactionTimes[round]&&diveT<0&&!aiDiveUsed){
   const delta=point.x-keeper.root.position.x;
   const remaining=interceptTime-flightT;
-  const profile=high?highDive:point.y<.95?aiLowDive:aiMidDive;
-  if(remaining>0&&remaining<.49&&Math.abs(delta)>.55&&Math.abs(delta)<profile.distance+.75){
+  const centralJump=high&&Math.abs(delta)<=.65;
+  const profile=centralJump?aiCenterJump:high?aiHighDive:point.y<.95?aiLowDive:aiMidDive;
+  const canReach=centralJump||(Math.abs(delta)>.55&&Math.abs(delta)<profile.distance+.75);
+  if(remaining>0&&remaining<.49&&canReach){
    aiDiveUsed=true;
-   startDive(keeper,Math.sign(delta),profile);
+   startDive(keeper,centralJump?0:Math.sign(delta),profile);
   }else{
    moveKeeper(keeper,clamp(delta*5,-2.65,2.65),dt,3.4);
   }
