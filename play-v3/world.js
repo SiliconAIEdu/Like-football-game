@@ -1,4 +1,4 @@
-import {mirrorKeeperDive} from './keeper-motion.js';
+import {mirrorKeeperDive,reachWithArm} from './keeper-motion.js?v=2';
 import {PlayerAppearance,addUniformDetail} from './player-appearance.js?v=3x';
 import * as THREE from 'three';
 import {fitPlayerLandmarks,styleYamalMaterial} from './face-landmarks.js?v=3x';
@@ -153,5 +153,22 @@ export class FootballWorld{
  resize(){this.renderer.setSize(this.host.clientWidth,this.host.clientHeight);this.camera.aspect=this.host.clientWidth/this.host.clientHeight;this.camera.updateProjectionMatrix();this.depthFocus?.resize(this.host.clientWidth,this.host.clientHeight)}
  aimAtPointer(x,y){const rect=this.renderer.domElement.getBoundingClientRect();this.ray.setFromCamera(new THREE.Vector2((x-rect.left)/rect.width*2-1,-(y-rect.top)/rect.height*2+1),this.camera);const p=new THREE.Vector3();return this.ray.ray.intersectPlane(this.goalPlane,p)?p:null}
  render(){if(this.cutaway)this.depthFocus.render(this.camTarget);else this.renderer.render(this.scene,this.camera)}
- update(dt,time){this.sceneTime=time;for(const actor of this.actors)if(actor.root.visible){actor.facial?.restore();actor.mixer.update(dt);this.attention(actor,dt);}this.crowd.update(dt,time);this.ballShadow.visible=this.ball.visible;this.ballShadow.position.set(this.ball.position.x,.025,this.ball.position.z);this.ballShadow.scale.setScalar(1+this.ball.position.y*.3);this.ballShadow.material.opacity=.3/(1+this.ball.position.y*.5);const cam=new THREE.Vector3(),look=new THREE.Vector3();if(this.cutaway&&this.player){const elapsed=time-this.cutaway.start;let shot='player';this.camera.fov=38;this.camera.updateProjectionMatrix();if(elapsed>1.6&&elapsed<4.8&&this.crowd.ready){const c=this.crowd.shot(time);cam.copy(c.camera);look.copy(c.look);shot='crowd';this.cutawayLabel=this.cutaway.win?'看台上的欢呼':'看台上的遗憾'}else{const p=this.player.root.position,yaw=this.player.root.rotation.y,forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),side=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));cam.copy(p).addScaledVector(forward,this.selectedStar==='ronaldo'?2.7:4.4).addScaledVector(side,.7);cam.y=p.y+1.5;look.copy(p);look.y+=1.35;this.cutawayLabel=this.cutaway.win?'球星特写':'下一次机会'}if(this.cutaway.lastShot!==shot){this.camera.position.copy(cam);this.camTarget.copy(look);this.cutaway.lastShot=shot}}else if(this.cameraMode==='player'&&this.player){const p=this.player.root.position;if(this.sideView){cam.set(p.x+7,2.6,p.z+2.7);look.set(p.x,1,p.z-.8)}else{cam.set(p.x*.85+2.0,3.05,p.z+6.6);look.set(p.x*.8,.95,p.z-4)}}else if(this.cameraMode==='keeper'){cam.set(0,5.2,-22.5);look.set(0,.7,-8)}else if(this.cameraMode==='referee'){cam.set(11,7,9);look.set(0,.7,-3)}else if(this.cameraMode==='portrait'&&this.player){cam.set(1.5,1.4,4.2);look.set(-.6,1.0,0)}else{cam.set(17+Math.sin(time*.035)*3,11,22);look.set(0,0,-8)}this.camera.position.lerp(cam,1-Math.exp(-dt*3.5));this.camTarget.lerp(look,1-Math.exp(-dt*4));this.camera.lookAt(this.camTarget);this.render()}
+ updateActorPose(actor,dt){
+  actor.facial?.restore();
+  actor.mixer.update(dt);
+  this.attention(actor,dt);
+  if(!actor.diveReach)return;
+  const {target,weight}=actor.diveReach;
+  for(const [side,offset] of [['l',.10],['r',-.10]]){
+   const upper=actor.model.getObjectByName('upperarm_'+side);
+   const lower=actor.model.getObjectByName('lowerarm_'+side);
+   const hand=actor.model.getObjectByName('hand_'+side);
+   if(upper&&lower&&hand){
+    const wristTarget=target.clone();
+    wristTarget.x+=offset*actor.height/1.87;
+    reachWithArm(upper,lower,hand,wristTarget,weight);
+   }
+  }
+ }
+ update(dt,time){this.sceneTime=time;for(const actor of this.actors)if(actor.root.visible){if(!actor.poseUpdated)this.updateActorPose(actor,dt);actor.poseUpdated=false;}this.crowd.update(dt,time);this.ballShadow.visible=this.ball.visible;this.ballShadow.position.set(this.ball.position.x,.025,this.ball.position.z);this.ballShadow.scale.setScalar(1+this.ball.position.y*.3);this.ballShadow.material.opacity=.3/(1+this.ball.position.y*.5);const cam=new THREE.Vector3(),look=new THREE.Vector3();if(this.cutaway&&this.player){const elapsed=time-this.cutaway.start;let shot='player';this.camera.fov=38;this.camera.updateProjectionMatrix();if(elapsed>1.6&&elapsed<4.8&&this.crowd.ready){const c=this.crowd.shot(time);cam.copy(c.camera);look.copy(c.look);shot='crowd';this.cutawayLabel=this.cutaway.win?'看台上的欢呼':'看台上的遗憾'}else{const p=this.player.root.position,yaw=this.player.root.rotation.y,forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),side=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));cam.copy(p).addScaledVector(forward,this.selectedStar==='ronaldo'?2.7:4.4).addScaledVector(side,.7);cam.y=p.y+1.5;look.copy(p);look.y+=1.35;this.cutawayLabel=this.cutaway.win?'球星特写':'下一次机会'}if(this.cutaway.lastShot!==shot){this.camera.position.copy(cam);this.camTarget.copy(look);this.cutaway.lastShot=shot}}else if(this.cameraMode==='player'&&this.player){const p=this.player.root.position;if(this.sideView){cam.set(p.x+7,2.6,p.z+2.7);look.set(p.x,1,p.z-.8)}else{cam.set(p.x*.85+2.0,3.05,p.z+6.6);look.set(p.x*.8,.95,p.z-4)}}else if(this.cameraMode==='keeper'){cam.set(0,5.2,-22.5);look.set(0,.7,-8)}else if(this.cameraMode==='referee'){cam.set(11,7,9);look.set(0,.7,-3)}else if(this.cameraMode==='portrait'&&this.player){cam.set(1.5,1.4,4.2);look.set(-.6,1.0,0)}else{cam.set(17+Math.sin(time*.035)*3,11,22);look.set(0,0,-8)}this.camera.position.lerp(cam,1-Math.exp(-dt*3.5));this.camTarget.lerp(look,1-Math.exp(-dt*4));this.camera.lookAt(this.camTarget);this.render()}
 }

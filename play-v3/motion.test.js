@@ -47,9 +47,9 @@ test('player face exports working eyelid and gaze geometry',()=>{
  for(const eye of eyes)for(const name of ['LookLeft','LookRight','LookUp','LookDown'])assert.ok(eye.extras.targetNames.includes(name));
 });
 
-test('keeper dive poses reach toward the same side as their travel',async()=>{
+test('keeper dive poses reach to either side and can extend a glove toward the ball',async()=>{
  const THREE=await import('../vendor/three.module.js');
- const {mirrorKeeperDive}=await import('./keeper-motion.js');
+ const {mirrorKeeperDive,reachWithArm}=await import('./keeper-motion.js');
  const dive=gltf.animations.find(animation=>animation.name==='Dive_Ronaldo_Rig');
  const binaryOffset=28+bytes.readUInt32LE(12);
  function readAccessor(index,size){
@@ -81,9 +81,20 @@ test('keeper dive poses reach toward the same side as their travel',async()=>{
   const mixer=new THREE.AnimationMixer(root);
   mixer.clipAction(clip).play();
   mixer.setTime(clip.duration/2);
-  return Object.fromEntries(['head','hand_l','hand_r'].map(name=>[
+  const positions=Object.fromEntries(['head','hand_l','hand_r'].map(name=>[
    name,root.getObjectByName(name).getWorldPosition(new THREE.Vector3()).x
   ]));
+  const side=positions.head>0?'l':'r';
+  const upper=root.getObjectByName('upperarm_'+side);
+  const lower=root.getObjectByName('lowerarm_'+side);
+  const glove=root.getObjectByName('hand_'+side);
+  const target=upper.getWorldPosition(new THREE.Vector3())
+   .add(new THREE.Vector3(Math.sign(positions.head)*.38,.12,.25));
+  const before=glove.getWorldPosition(new THREE.Vector3()).distanceTo(target);
+  reachWithArm(upper,lower,glove,target,1);
+  const after=glove.getWorldPosition(new THREE.Vector3()).distanceTo(target);
+  assert.ok(after<.04&&after<before);
+  return positions;
  }
  const negative=pose(original),positive=pose(mirrored);
  assert.ok(negative.head<-.25&&positive.head>.25);
