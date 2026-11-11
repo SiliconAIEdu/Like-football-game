@@ -153,19 +153,45 @@ export class FootballWorld{
  resize(){this.renderer.setSize(this.host.clientWidth,this.host.clientHeight);this.camera.aspect=this.host.clientWidth/this.host.clientHeight;this.camera.updateProjectionMatrix();this.depthFocus?.resize(this.host.clientWidth,this.host.clientHeight)}
  aimAtPointer(x,y){const rect=this.renderer.domElement.getBoundingClientRect();this.ray.setFromCamera(new THREE.Vector2((x-rect.left)/rect.width*2-1,-(y-rect.top)/rect.height*2+1),this.camera);const p=new THREE.Vector3();return this.ray.ray.intersectPlane(this.goalPlane,p)?p:null}
  render(){if(this.cutaway)this.depthFocus.render(this.camTarget);else this.renderer.render(this.scene,this.camera)}
+ catchBall(keeper){
+  keeper.heldBall={start:this.ball.position.clone(),elapsed:0};
+ }
+ clearKeeperCatch(keeper){
+  keeper.heldBall=null;
+  keeper.readyReach=null;
+ }
  updateActorPose(actor,dt){
   actor.facial?.restore();
   actor.mixer.update(dt);
   this.attention(actor,dt);
-  if(!actor.diveReach)return;
-  const {target,weight}=actor.diveReach;
+  let reach=actor.diveReach??actor.readyReach;
+  const held=actor.heldBall;
+  if(held){
+   const chest=actor.model.getObjectByName('spine_02')??actor.root;
+   const torso=chest.getWorldPosition(new THREE.Vector3());
+   const rotation=actor.root.getWorldQuaternion(new THREE.Quaternion());
+   const offset=new THREE.Vector3(0,.04,.24).multiplyScalar(actor.height/1.87).applyQuaternion(rotation);
+   held.elapsed+=dt;
+   const blend=Math.min(held.elapsed/.30,1);
+   const ease=blend*blend*(3-2*blend);
+   this.ball.position.copy(held.start).lerp(torso.add(offset),ease);
+   reach={target:this.ball.position,weight:1};
+  }
+  if(!reach)return;
+  const {target,weight}=reach;
   for(const [side,offset] of [['l',.10],['r',-.10]]){
    const upper=actor.model.getObjectByName('upperarm_'+side);
    const lower=actor.model.getObjectByName('lowerarm_'+side);
    const hand=actor.model.getObjectByName('hand_'+side);
    if(upper&&lower&&hand){
     const wristTarget=target.clone();
-    wristTarget.x+=offset*actor.height/1.87;
+    if(held){
+     const sideOffset=new THREE.Vector3(Math.sign(offset)*.145,-.02,.03)
+      .multiplyScalar(actor.height/1.87).applyQuaternion(actor.root.quaternion);
+     wristTarget.add(sideOffset);
+    }else{
+     wristTarget.x+=offset*actor.height/1.87;
+    }
     reachWithArm(upper,lower,hand,wristTarget,weight);
    }
   }
