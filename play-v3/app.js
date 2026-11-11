@@ -11,7 +11,7 @@ const reboundVelocity=new THREE.Vector3();
 const ronaldoDribble=new RonaldoDribble();
 let reboundActive=false,aiDiveUsed=false;const rollingVelocity=new THREE.Vector3();let lastTouch=-1,shotPending=false;
 let world;try{world=new FootballWorld($('#world'))}catch(e){$('#fatal').hidden=false;$('#fatal').textContent='球场未能启动。请使用支持三维图形的浏览器，并开启硬件加速后重试。';throw e}
-const roles={player:{name:'球员',title:'五球，征服全场。',goal:'自由带球，寻找角度。五次射门，尽可能多地得分。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动　<kbd>Shift</kbd> 加速</div><div>点击球门锁定落点，或用方向键微调</div><div>拖动滑杆调力度，力度过高更容易踢偏，再点击「射门」；长按 <kbd>空格</kbd> 可蓄力</div><div>触屏：左侧方向键跑动，点球门选落点，再点「射门」</div>',label:'射门挑战',max:5},keeper:{name:'门将',title:'你的球门，你来守。',goal:'五次来球，观察出脚方向，移动或扑救。',instruction:'<div><kbd>A</kbd><kbd>D</kbd> 左右移动</div><div><kbd>空格</kbd> 向移动方向扑救</div><div>站在球路上可以直接挡球，扑救范围更大</div><div>触屏：左侧方向键移动，右侧按钮扑救</div>',label:'守门挑战',max:5},referee:{name:'裁判',title:'看清每一次接触。',goal:'四次争球，跟随跑动，判断是否犯规。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动观察</div><div><kbd>F</kbd> 鸣哨判犯规　<kbd>C</kbd> 比赛继续</div><div>争球结束后可直接判罚，也可点击「再看一次」</div><div>触屏：点击下方的判罚按钮</div>',label:'执法挑战',max:4}};
+const roles={player:{name:'球员',title:'五球，征服全场。',goal:'自由带球，寻找角度。五次射门，尽可能多地得分。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动　<kbd>Shift</kbd> 加速</div><div>点击球门锁定落点，或用方向键微调</div><div>拖动滑杆调力度，力度过高更容易踢偏，再点击「射门」；长按 <kbd>空格</kbd> 可蓄力</div><div>触屏：左侧方向键跑动，点球门选落点，再点「射门」</div>',label:'射门挑战',max:5},keeper:{name:'门将',title:'你的球门，你来守。',goal:'五次来球，观察出脚方向，移动或扑救。',instruction:'<div><kbd>A</kbd><kbd>D</kbd> 左右移动</div><div><kbd>空格</kbd> 扑救，遇到高球会起跳</div><div>站在球路上可以直接挡球，扑救范围更大</div><div>触屏：左侧方向键移动，右侧按钮扑救</div>',label:'守门挑战',max:5},referee:{name:'裁判',title:'看清每一次接触。',goal:'四次争球，跟随跑动，判断是否犯规。',instruction:'<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 跑动观察</div><div><kbd>F</kbd> 鸣哨判犯规　<kbd>C</kbd> 比赛继续</div><div>争球结束后可直接判罚，也可点击「再看一次」</div><div>触屏：点击下方的判罚按钮</div>',label:'执法挑战',max:4}};
 let refRounds=[],refReplayT=null;
 let chosen=players[0],loadedId=null,loadSerial=0;
 let role='player',screen='start',loaded=false,loading=null,paused=false,phase='idle',phaseT=0,round=0,score=0,results=[],totalTime=0,shotTime=0,power=0,charging=false,aim={x:1.5,y:1.2,z:GOAL_Z},ballFlight=null,flightT=0,diveT=-1,diveDir=0,refPhase=0;const actorPos=new THREE.Vector3(),velocity=new THREE.Vector3();let strikePlayed=false,shotRoot=null,shotOrigin=null;
@@ -61,9 +61,11 @@ function beginAction(){
   charging=true;
   power=.12;
  }else if(role==='keeper'&&(phase==='playing'||phase==='shooting')&&diveT<0){
-  const targetX=strikePlayed&&ballFlight ? ballFlight.target.x : world.ball.position.x;
-  const direction=keeperInput()||Math.sign(targetX-world.player.root.position.x)||1;
-  startDive(world.player,direction);
+  const keeper=world.player;
+  const intercept=phase==='shooting'&&strikePlayed&&ballFlight?keeperIntercept(keeper):null;
+  const targetX=intercept?.point.x??world.ball.position.x;
+  const direction=keeperInput()||Math.sign(targetX-keeper.root.position.x)||1;
+  startDive(keeper,direction,intercept?.high?highDive:lowDive);
   audio.tone(170,.12,'triangle',.06);
  }
 }
@@ -270,17 +272,21 @@ function keeperContact(keeper,from,to){
  return first;
 }
 
-function updateShot(shooter,keeper,dt){
- if(!updateStrike(shooter,dt))return;
- const ball=world.ball.position;
- const next=flightPoint(ballFlight,flightT);
+function keeperIntercept(keeper){
  const plane=keeper.root.position.z+.32;
  const fraction=clamp((plane-ballFlight.start.z)/(ballFlight.target.z-ballFlight.start.z),0,1);
  const interceptTime=fraction*ballFlight.duration;
  const point=flightPoint(ballFlight,interceptTime);
+ return {point,interceptTime,high:point.y>1.75&&inGoal(ballFlight.target)};
+}
+
+function updateShot(shooter,keeper,dt){
+ if(!updateStrike(shooter,dt))return;
+ const ball=world.ball.position;
+ const next=flightPoint(ballFlight,flightT);
+ const {point,interceptTime,high}=keeperIntercept(keeper);
  if(role==='player'&&flightT>keeperReactionTimes[round]&&diveT<0&&!aiDiveUsed){
   const delta=point.x-keeper.root.position.x;
-  const high=point.y>1.75&&inGoal(ballFlight.target);
   const remaining=interceptTime-flightT;
   const reach=high?3.3:2.5;
   if(remaining>0&&remaining<.49&&Math.abs(delta)>.65&&Math.abs(delta)<reach){
