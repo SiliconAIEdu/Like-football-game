@@ -1,4 +1,4 @@
-import {addYamalCurls} from './yamal-hair.js';
+import {addYamalCurls} from './yamal-hair.js?v=2';
 import {mirrorKeeperDive,reachWithArm} from './keeper-motion.js?v=2';
 import {PlayerAppearance,addUniformDetail} from './player-appearance.js?v=3x';
 import * as THREE from 'three';
