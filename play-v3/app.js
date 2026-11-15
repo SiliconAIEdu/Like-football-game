@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {QUICK_KICK_START,RonaldoDribble} from './ronaldo-motion.js?v=3w';
 import {Locomotion,sampleRoot,rootInWorld,wrapAngle} from './locomotion.js?v=3j';
 import {players,buildRoster,cardDesign} from './roster.js?v=4c';
-import {FootballWorld} from './world.js?v=4q';
+import {FootballWorld} from './world.js?v=yamal1';
 import {MatchAudio} from './audio.js?v=3j';
 import {clamp,flight,flightPoint,inGoal,sweptContact,movingContact,GRAVITY,randomRefScenarios,randomKeeperTargets,shotTarget,stepCharge,BEST_POWER_MIN,BEST_POWER_MAX,GOAL_Z,strikeRoot} from './rules.js?v=4p';
 const $=s=>document.querySelector(s),screens=[...document.querySelectorAll('.screen')],audio=new MatchAudio(),keys=new Set();

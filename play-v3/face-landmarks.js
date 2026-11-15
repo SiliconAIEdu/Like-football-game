@@ -52,8 +52,11 @@ export function styleYamalMaterial(material){
   material.color.set(0xa96c4d);
   material.roughness=.77;
  }else if(name==='hair_dark_brown'){
-  material.color.set(0x9c7435);
+  material.color.set(0x735031);
+ }else if(name==='boot_graphite'){
+  material.color.set(0xf3ede1);
+  material.roughness=.68;
  }else if(/short|sock|trim/.test(name)){
-  material.color.set(0x182e5d);
+  material.color.set(0x172345);
  }
 }
