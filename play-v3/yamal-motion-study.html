@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>亚马尔 · 可动模型检查</title>
+<style>body{margin:0;background:#121d27;color:#eee;font:16px system-ui}header{padding:20px}h1{margin:0 0 8px}#stage{height:65vh;min-height:380px}button,input{font:inherit;margin:5px;padding:9px;background:#26394a;color:white;border:1px solid #567;border-radius:6px}#status{white-space:pre-wrap}a{color:#addbff}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.js"}}</script>
+<header><h1>亚马尔 · 可动模型检查</h1><a href="../index.html">返回游戏</a><p>与比赛使用同一个模型、动作与肩部修正。</p><div id="status">加载中…</div></header><div id="stage"></div>
+<nav id="actions"></nav><label>动作进度 <input id="time" type="range" min="0" max="1" step="0.01" value="0"></label><button id="pause">暂停</button><button id="front">正面</button><button id="side">侧面</button><button id="quarter">45°</button>
+<script type="module">
+import {FootballWorld} from './world.js?v=yamal-playable1';
+import {players} from './roster.js?v=yamal-playable1';
+const status=document.querySelector('#status'),slider=document.querySelector('#time');
+try{
+ const w=new FootballWorld(document.querySelector('#stage'));const source=await w.loadPlayer(players.find(p=>p.id==='yamal'),p=>status.textContent=`加载 ${p}%`);const a=w.player;
+ a.root.position.set(0,0,0);let paused=false,clip='idle',yaw=0;
+ a.facial=null;w.ball.visible=false;w.ballShadow.visible=false;
+ const names={idle:'站立',walk:'走路',run:'跑步',kick:'射门',reactgoal:'庆祝',checkside90:'侧平举',checkforward90:'前伸',checkoverhead:'高举'};
+ const setView=()=>{w.camera.position.set(Math.sin(yaw)*3.8,1.15,Math.cos(yaw)*3.8);w.camera.lookAt(0,.94,0);w.camera.fov=33;w.camera.updateProjectionMatrix()};setView();
+ for(const [key,label] of Object.entries(names)){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{clip=key;w.animate(a,key,false,true);slider.max=a.actions[key].getClip().duration;slider.value=0;w.updateActorPose(a,0);status.textContent=`${label} · ${source.animations.length} 个动作 · 独立骨架`};document.querySelector('#actions').append(b)}
+ slider.oninput=()=>{paused=true;a.actions[clip].time=Number(slider.value);w.updateActorPose(a,0);w.render()};document.querySelector('#pause').onclick=()=>{paused=!paused;document.querySelector('#pause').textContent=paused?'播放':'暂停'};
+ for(const [id,angle] of [['front',0],['side',Math.PI/2],['quarter',Math.PI/4]])document.querySelector('#'+id).onclick=()=>{yaw=angle;setView()};
+ status.textContent=`就绪 · ${source.animations.length} 个动作 · 可动模型已加载`;
+ let last=performance.now();function frame(now){const dt=Math.min(.04,(now-last)/1000);last=now;if(!paused){w.updateActorPose(a,dt);slider.value=a.actions[clip].time}w.render();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+}catch(e){status.textContent='加载失败：'+e.message;console.error(e)}
+</script></html>

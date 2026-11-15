@@ -1,3 +1,5 @@
+import {actorMotions} from './actor-motion.js';
+import {updateUpperArmVolume} from './shoulder-deformation.js';
 import {addYamalCurls} from './yamal-hair.js?v=3';
 import {mirrorKeeperDive,reachWithArm} from './keeper-motion.js?v=2';
 import {PlayerAppearance,addUniformDetail} from './player-appearance.js?v=yamal3';
@@ -58,9 +60,10 @@ export class FootballWorld{
    .then(response=>response.ok?response.json():null).catch(()=>null);
   const contracts=Promise.all([
    readContract('assets/mocap-contract.json?v=3j'),
-   readContract('assets/strike-contract.json')
+   readContract('assets/strike-contract.json'),
+   star.id==='yamal'?readContract('assets/yamal-playable-v1-contact.json'):Promise.resolve(null)
   ]);
-  const [source,ronaldo,npc,emotions,[motionData,strikeContract]]=await Promise.all(
+  const [source,ronaldo,npc,emotions,[motionData,strikeContract,playerContract]]=await Promise.all(
    [this.getModel(star.model),motionModel,opponent,reactions,contracts].map(async request=>{
     const result=await request;
     progress();
@@ -68,6 +71,7 @@ export class FootballWorld{
    })
   );
   if(serial!==this.loadSerial)return;
+  if(star.id==='yamal'&&!playerContract)throw new Error('新角色触球数据加载失败，请重试');
   this.motionData=motionData;
   if(strikeContract)this.strikeContract=strikeContract;
   this.motionClips=[...ronaldo.animations];
@@ -94,6 +98,7 @@ export class FootballWorld{
   }
   this.actors=[];
   this.player=this.addActor(source,star.height,false,star.id);
+  this.player.strikeContract=playerContract;
   this.opponent=this.addActor(npc,npc===ronaldo?1.87:star.id==='courtois'?1.78:1.99,true);
   this.extra=this.addActor(ronaldo,1.87,true);
   this.opponent.root.visible=false;
@@ -101,11 +106,11 @@ export class FootballWorld{
   onProgress(100);
   return source;
  }
- addActor(source,height=1.87,npc=false,playerId=null){const ronaldo=playerId==='ronaldo',yamal=playerId==='yamal';const model=clone(source.scene);if(ronaldo)refineRonaldoMatchModel(model);const bounds=new THREE.Box3().setFromObject(model),scale=height/(bounds.max.y-bounds.min.y);if(yamal)addYamalCurls(model);model.scale.multiplyScalar(scale);model.position.y=-bounds.min.y*scale;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material=o.material.clone();if(o.name==='Yamal_Golden_Curls')return;if(ronaldo||yamal)fitPlayerLandmarks(o,playerId);if(yamal)styleYamalMaterial(o.material);if(/shirt_front_number|shirt_back_number|shirt_back_name|short_number|shirt_crest/.test(o.name)){o.geometry=o.geometry.clone();const position=o.geometry.attributes.position,normal=o.geometry.attributes.normal;if(normal)for(let i=0;i<position.count;i++){position.setXYZ(i,position.getX(i)+normal.getX(i)*.003,position.getY(i)+normal.getY(i)*.003,position.getZ(i)+normal.getZ(i)*.003);}o.material.polygonOffset=true;o.material.polygonOffsetFactor=-2;o.material.polygonOffsetUnits=-2;}o.material.userData.baseColor=o.material.color.getHex();o.material.roughness=/eye|iris|pupil/i.test(o.name)?Math.max(.22,o.material.roughness??.3):Math.max(.5,o.material.roughness??.7);if(/jersey|short|sock/i.test(o.material.name)){o.material.bumpMap=this.fabric;o.material.bumpScale=.0012;o.material.roughness=.9}if(npc&&/shirt|jersey|kit|short|sock/i.test(o.material.name))o.material.color.set(0x264c86);this.appearance.apply(o);if(ronaldo&&o.material.name==='eyes_white')o.material.color.multiplyScalar(.76);if(ronaldo&&/^boot/.test(o.name)){this.cr7BootTexture??=createCR7BootTexture();styleCR7Boot(o,this.cr7BootTexture);}addUniformDetail(o,yamal);if(ronaldo&&o.material.name==='Face_reference')softenRonaldoFaceMaterial(o.material)}}});const root=new THREE.Group();root.add(model);this.scene.add(root);const mixer=new THREE.AnimationMixer(model),actions={};for(const original of this.motionClips||source.animations){const clip=original.clone();clip.name=clip.name.replace(/_Ronaldo_Rig$/,'');clip.tracks=clip.tracks.filter(t=>!t.name.endsWith('.scale'));for(const t of clip.tracks){if(!t.name.endsWith('.position'))continue;const name=t.name.slice(0,-9),from=(original.name.startsWith('React')?this.emotionSource:this.motionSource)?.getObjectByName(name),to=model.getObjectByName(name);if(from&&to)for(let i=0;i<t.values.length;i+=3){t.values[i]+=to.position.x-from.position.x;t.values[i+1]+=to.position.y-from.position.y;t.values[i+2]+=to.position.z-from.position.z}}actions[clip.name.toLowerCase()]=mixer.clipAction(clip)};if(ronaldo&&actions.kick){
+ addActor(source,height=1.87,npc=false,playerId=null){const ronaldo=playerId==='ronaldo',yamal=playerId==='yamal';const model=clone(source.scene),independent=yamal&&source.animations.some(c=>c.name==='Kick');if(ronaldo)refineRonaldoMatchModel(model);const bounds=new THREE.Box3().setFromObject(model),scale=height/(bounds.max.y-bounds.min.y);if(yamal&&!independent)addYamalCurls(model);model.scale.multiplyScalar(scale);model.position.y=-bounds.min.y*scale;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material=o.material.clone();if(o.name==='Yamal_Golden_Curls')return;if(ronaldo||(yamal&&!independent))fitPlayerLandmarks(o,playerId);if(yamal&&!independent)styleYamalMaterial(o.material);if(/shirt_front_number|shirt_back_number|shirt_back_name|short_number|shirt_crest/.test(o.name)){o.geometry=o.geometry.clone();const position=o.geometry.attributes.position,normal=o.geometry.attributes.normal;if(normal)for(let i=0;i<position.count;i++){position.setXYZ(i,position.getX(i)+normal.getX(i)*.003,position.getY(i)+normal.getY(i)*.003,position.getZ(i)+normal.getZ(i)*.003);}o.material.polygonOffset=true;o.material.polygonOffsetFactor=-2;o.material.polygonOffsetUnits=-2;}o.material.userData.baseColor=o.material.color.getHex();o.material.roughness=/eye|iris|pupil/i.test(o.name)?Math.max(.22,o.material.roughness??.3):Math.max(.5,o.material.roughness??.7);if(/jersey|short|sock/i.test(o.material.name)){o.material.bumpMap=this.fabric;o.material.bumpScale=.0012;o.material.roughness=.9}if(npc&&/shirt|jersey|kit|short|sock/i.test(o.material.name))o.material.color.set(0x264c86);if(!independent)this.appearance.apply(o);if(ronaldo&&o.material.name==='eyes_white')o.material.color.multiplyScalar(.76);if(ronaldo&&/^boot/.test(o.name)){this.cr7BootTexture??=createCR7BootTexture();styleCR7Boot(o,this.cr7BootTexture);}if(!independent)addUniformDetail(o,yamal);if(ronaldo&&o.material.name==='Face_reference')softenRonaldoFaceMaterial(o.material)}}});const root=new THREE.Group();root.add(model);this.scene.add(root);const mixer=new THREE.AnimationMixer(model),actions={};for(const {clip:original,local} of actorMotions(this.motionClips,independent?{animations:[...source.animations,...(source.animations.find(c=>c.name==='Dive_Ronaldo_Rig')?[mirrorKeeperDive(source.animations.find(c=>c.name==='Dive_Ronaldo_Rig'))]:[])]}:{animations:[]})){const clip=original.clone();clip.name=clip.name.replace(/_Ronaldo_Rig$/,'');clip.tracks=clip.tracks.filter(t=>!t.name.endsWith('.scale'));for(const t of clip.tracks){if(local||!t.name.endsWith('.position'))continue;const name=t.name.slice(0,-9),from=(original.name.startsWith('React')?this.emotionSource:this.motionSource)?.getObjectByName(name),to=model.getObjectByName(name);if(from&&to)for(let i=0;i<t.values.length;i+=3){t.values[i]+=to.position.x-from.position.x;t.values[i+1]+=to.position.y-from.position.y;t.values[i+2]+=to.position.z-from.position.z}}actions[clip.name.toLowerCase()]=mixer.clipAction(clip)};if(ronaldo&&actions.kick){
   const fullKick=actions.kick.getClip();
   const quickKick=THREE.AnimationUtils.subclip(fullKick,'KickQuick',Math.round(QUICK_KICK_START*60),Math.ceil(fullKick.duration*60)+1,60);
   actions.kickquick=mixer.clipAction(quickKick);
- }const actor={root,model,mixer,actions,current:null,ronaldo,yamal,height,speed:1,head:model.getObjectByName('head'),neck:model.getObjectByName('neck_01'),lookYaw:0,lookPitch:0};actor.facial=new FacialPerformance(actor);this.actors.push(actor);this.animate(actor,'idle');return actor}
+ }const actor={root,model,mixer,actions,current:null,ronaldo,yamal,independent,height,speed:1,head:model.getObjectByName('head'),neck:model.getObjectByName('neck_01'),lookYaw:0,lookPitch:0};actor.facial=new FacialPerformance(actor);this.actors.push(actor);this.animate(actor,'idle');return actor}
  motionInfo(name){if(name==='stop')name='runstop';const clips=this.motionData?.clips;if(!clips)return null;return Array.isArray(clips)?clips.find(c=>c.name.toLowerCase()===name.toLowerCase()):clips[name]||clips[Object.keys(clips).find(k=>k.toLowerCase()===name.toLowerCase())];}
  animate(actor,name,once=false,restart=false){
   if(!actor)return;if(name==='stop')name='runstop';const key=Object.keys(actor.actions).find(k=>k===name.toLowerCase())||Object.keys(actor.actions).find(k=>k.includes(name));if(!key)return;
@@ -178,7 +183,7 @@ export class FootballWorld{
    this.ball.position.copy(held.start).lerp(torso.add(offset),ease);
    reach={target:this.ball.position,weight:1};
   }
-  if(!reach)return;
+  if(!reach){updateUpperArmVolume(actor.model);return;}
   const {target,weight}=reach;
   for(const [side,offset] of [['l',.10],['r',-.10]]){
    const upper=actor.model.getObjectByName('upperarm_'+side);
@@ -196,6 +201,7 @@ export class FootballWorld{
     reachWithArm(upper,lower,hand,wristTarget,weight);
    }
   }
+  updateUpperArmVolume(actor.model);
  }
  update(dt,time){this.sceneTime=time;for(const actor of this.actors)if(actor.root.visible){if(!actor.poseUpdated)this.updateActorPose(actor,dt);actor.poseUpdated=false;}this.crowd.update(dt,time);this.ballShadow.visible=this.ball.visible;this.ballShadow.position.set(this.ball.position.x,.025,this.ball.position.z);this.ballShadow.scale.setScalar(1+this.ball.position.y*.3);this.ballShadow.material.opacity=.3/(1+this.ball.position.y*.5);const cam=new THREE.Vector3(),look=new THREE.Vector3();if(this.cutaway&&this.player){const elapsed=time-this.cutaway.start;let shot='player';this.camera.fov=38;this.camera.updateProjectionMatrix();if(elapsed>1.6&&elapsed<4.8&&this.crowd.ready){const c=this.crowd.shot(time);cam.copy(c.camera);look.copy(c.look);shot='crowd';this.cutawayLabel=this.cutaway.win?'看台上的欢呼':'看台上的遗憾'}else{const p=this.player.root.position,yaw=this.player.root.rotation.y,forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),side=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));cam.copy(p).addScaledVector(forward,this.selectedStar==='ronaldo'?2.7:4.4).addScaledVector(side,.7);cam.y=p.y+1.5;look.copy(p);look.y+=1.35;this.cutawayLabel=this.cutaway.win?'球星特写':'下一次机会'}if(this.cutaway.lastShot!==shot){this.camera.position.copy(cam);this.camTarget.copy(look);this.cutaway.lastShot=shot}}else if(this.cameraMode==='player'&&this.player){const p=this.player.root.position;if(this.sideView){cam.set(p.x+7,2.6,p.z+2.7);look.set(p.x,1,p.z-.8)}else{cam.set(p.x*.85+2.0,3.05,p.z+6.6);look.set(p.x*.8,.95,p.z-4)}}else if(this.cameraMode==='keeper'){cam.set(0,5.2,-22.5);look.set(0,.7,-8)}else if(this.cameraMode==='referee'){cam.set(11,7,9);look.set(0,.7,-3)}else if(this.cameraMode==='portrait'&&this.player){cam.set(1.5,1.4,4.2);look.set(-.6,1.0,0)}else{cam.set(17+Math.sin(time*.035)*3,11,22);look.set(0,0,-8)}this.camera.position.lerp(cam,1-Math.exp(-dt*3.5));this.camTarget.lerp(look,1-Math.exp(-dt*4));this.camera.lookAt(this.camTarget);this.render()}
 }

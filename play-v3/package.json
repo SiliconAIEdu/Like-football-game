@@ -2,6 +2,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test rules.test.js motion.test.js locomotion.test.js"
+    "test": "node --test rules.test.js motion.test.js locomotion.test.js yamal-model.test.js"
   }
 }

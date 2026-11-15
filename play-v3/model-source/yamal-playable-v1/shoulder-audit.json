@@ -1,0 +1,128 @@
+[
+  {
+    "plane": 0,
+    "angle": 0,
+    "max_edge_growth_m": 0.013373924400072318,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 0,
+    "angle": 30,
+    "max_edge_growth_m": 0.010812314363408192,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 0,
+    "angle": 60,
+    "max_edge_growth_m": 0.04106279625945479,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 0,
+    "angle": 90,
+    "max_edge_growth_m": 0.07672351011707496,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 0,
+    "angle": 120,
+    "max_edge_growth_m": 0.10873920744153999,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 0,
+    "angle": 155,
+    "max_edge_growth_m": 0.1344321460804311,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 45,
+    "angle": 0,
+    "max_edge_growth_m": 0.013373924400072318,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 45,
+    "angle": 30,
+    "max_edge_growth_m": 0.021826316408135777,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 45,
+    "angle": 60,
+    "max_edge_growth_m": 0.04138926065095665,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 45,
+    "angle": 90,
+    "max_edge_growth_m": 0.08801381406145095,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 45,
+    "angle": 120,
+    "max_edge_growth_m": 0.12326208435874111,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 45,
+    "angle": 155,
+    "max_edge_growth_m": 0.13661053025705663,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 90,
+    "angle": 0,
+    "max_edge_growth_m": 0.013373924400072318,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 90,
+    "angle": 30,
+    "max_edge_growth_m": 0.031612593996138284,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 90,
+    "angle": 60,
+    "max_edge_growth_m": 0.048358477275830966,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 90,
+    "angle": 90,
+    "max_edge_growth_m": 0.08207007828969931,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 90,
+    "angle": 120,
+    "max_edge_growth_m": 0.11365973102420132,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  },
+  {
+    "plane": 90,
+    "angle": 155,
+    "max_edge_growth_m": 0.13519596106590873,
+    "chest_core_displacement_m": 1.1944189326376765e-07,
+    "finite": true
+  }
+]

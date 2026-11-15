@@ -1,0 +1,79 @@
+[
+  {
+    "clip": "Idle",
+    "time": 0.5,
+    "finite": true,
+    "floor": 0.001999899046495557,
+    "max_edge_growth_m": 4.446091743035008e-07
+  },
+  {
+    "clip": "Walk",
+    "time": 0.3,
+    "finite": true,
+    "floor": 0.002000369131565094,
+    "max_edge_growth_m": 0.11449292353311862
+  },
+  {
+    "clip": "Run",
+    "time": 0.2,
+    "finite": true,
+    "floor": 0.004770108498632908,
+    "max_edge_growth_m": 0.07922048420062533
+  },
+  {
+    "clip": "Run",
+    "time": 0.6,
+    "finite": true,
+    "floor": 0.01481260359287262,
+    "max_edge_growth_m": 0.07734888917681038
+  },
+  {
+    "clip": "Kick",
+    "time": 0.65,
+    "finite": true,
+    "floor": 0.00199146568775177,
+    "max_edge_growth_m": 0.17420457327439645
+  },
+  {
+    "clip": "Kick",
+    "time": 0.9,
+    "finite": true,
+    "floor": 0.001994803547859192,
+    "max_edge_growth_m": 0.05909973419699875
+  },
+  {
+    "clip": "Kick",
+    "time": 1.15,
+    "finite": true,
+    "floor": -0.004334539175033569,
+    "max_edge_growth_m": 0.17632950081854942
+  },
+  {
+    "clip": "ReactGoal",
+    "time": 1,
+    "finite": true,
+    "floor": -6.161697820061818e-05,
+    "max_edge_growth_m": 0.08110781145482995
+  },
+  {
+    "clip": "CheckSide90",
+    "time": 0,
+    "finite": true,
+    "floor": -6.161697820061818e-05,
+    "max_edge_growth_m": 0.07672342491654864
+  },
+  {
+    "clip": "CheckForward90",
+    "time": 0,
+    "finite": true,
+    "floor": -6.161697820061818e-05,
+    "max_edge_growth_m": 0.08207008917394078
+  },
+  {
+    "clip": "CheckOverhead",
+    "time": 0,
+    "finite": true,
+    "floor": -6.161697820061818e-05,
+    "max_edge_growth_m": 0.13443236409791728
+  }
+]

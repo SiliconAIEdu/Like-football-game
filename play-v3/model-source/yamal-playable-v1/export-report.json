@@ -1,0 +1,57 @@
+{
+  "bones": 27,
+  "triangles": 109999,
+  "animations": [
+    "CheckDiagonal",
+    "CheckForward90",
+    "CheckForwardHigh",
+    "CheckOverhead",
+    "CheckRest",
+    "CheckSide45",
+    "CheckSide90",
+    "Dive_Ronaldo_Rig",
+    "Fall_Ronaldo_Rig",
+    "Idle",
+    "Kick",
+    "ReactGoal",
+    "ReactMiss",
+    "Run",
+    "RunStop",
+    "TurnLeft",
+    "TurnRight",
+    "Walk"
+  ],
+  "bytes": 9300420,
+  "gzip_bytes": 4838478,
+  "sha256": "bdce7ef5308182b97c3cd8c06d1f2de0fd533fdef7ab9cc7ef73daf637a543dc",
+  "contact": {
+    "time": 0.9,
+    "duration": 1.75,
+    "contact": {
+      "x": -1.1439489453548057,
+      "y": 0.11,
+      "z": 2.3073656452635514
+    },
+    "footAtContact": {
+      "x": -1.1439489453548057,
+      "y": 0.19214108228228566,
+      "z": 2.2342025220285855
+    },
+    "localFoot": {
+      "x": -0.5798144805933925,
+      "y": 0.19214108228228566,
+      "z": 0.37777288044384333
+    },
+    "sourceFrame": 138,
+    "directionYaw": 0,
+    "headingReference": "captured right foot forward velocity at ball contact",
+    "contactPointRest": [
+      -0.202,
+      -0.1,
+      0.019
+    ],
+    "ballRadius": 0.11,
+    "contactDistance": 0.11,
+    "rig": "yamal-playable-v1"
+  }
+}
