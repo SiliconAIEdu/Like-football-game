@@ -114,7 +114,7 @@ export function addUniformDetail(mesh,yamal=false){
    vec3 p=vUniformPosition;
    ${stripedJersey?`
     if(uniformRole<.5){
-     float stripe=smoothstep(.40,.60,fract((p.x+.08)*7.0));
+     float stripe=step(.5,fract(p.x*2.0+.25));
      diffuseColor.rgb=mix(vec3(.028,.070,.27),vec3(.39,.024,.061),stripe);
      if(p.z<-.30){
       vec2 q=vec2(-p.x,p.y-.55);

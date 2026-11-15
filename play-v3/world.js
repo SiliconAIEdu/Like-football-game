@@ -1,6 +1,6 @@
-import {addYamalCurls} from './yamal-hair.js?v=2';
+import {addYamalCurls} from './yamal-hair.js?v=3';
 import {mirrorKeeperDive,reachWithArm} from './keeper-motion.js?v=2';
-import {PlayerAppearance,addUniformDetail} from './player-appearance.js?v=3x';
+import {PlayerAppearance,addUniformDetail} from './player-appearance.js?v=yamal3';
 import * as THREE from 'three';
 import {fitPlayerLandmarks,styleYamalMaterial} from './face-landmarks.js?v=yamal1';
 import {createCR7BootTexture,styleCR7Boot} from './cr7-boots.js?v=3w';
