@@ -1,0 +1,30 @@
+{
+  "time": 0.9,
+  "duration": 1.75,
+  "contact": {
+    "x": -1.142445847910705,
+    "y": 0.11,
+    "z": 2.3315258933964214
+  },
+  "footAtContact": {
+    "x": -1.142445847910705,
+    "y": 0.15730479554747878,
+    "z": 2.2255258933964215
+  },
+  "localFoot": {
+    "x": -0.5810776189081656,
+    "y": 0.15730479554747878,
+    "z": 0.3690580845228418
+  },
+  "sourceFrame": 138,
+  "directionYaw": 0,
+  "headingReference": "captured right foot forward velocity at ball contact",
+  "contactPointRest": [
+    -0.202,
+    -0.1,
+    0.019
+  ],
+  "ballRadius": 0.11,
+  "contactDistance": 0.11,
+  "rig": "independent-anatomy-v4"
+}

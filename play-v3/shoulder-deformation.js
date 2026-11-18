@@ -1,4 +1,4 @@
-import {Vector3} from 'three';
+import {Vector3} from '../vendor/three.module.js';
 const cache=new WeakMap();
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)};
 export function shoulderWeights(angle,forwardFraction){

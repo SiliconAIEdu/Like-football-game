@@ -1,0 +1,196 @@
+{
+  "date": "2026-11-15",
+  "root": "/Users/like/Documents/足球明星展示馆",
+  "files": [
+    {
+      "path": "output/C罗-成功定稿/CR7-hunyuan.glb",
+      "bytes": 79450964,
+      "sha256": "a59a0868c38414917d0d2e36110c9eb2b785ab1d5fd1399a6d52cb0a15f9725f"
+    },
+    {
+      "path": "output/C罗-成功定稿/复现材料/assemble_natural.py",
+      "bytes": 2331,
+      "sha256": "f5c6505fd5d1820a917d5a54308fd7610875f39ab6fe1913c2fb4402528233a5"
+    },
+    {
+      "path": "output/C罗-成功定稿/复现材料/face-reference.png",
+      "bytes": 186983,
+      "sha256": "4dd5a7a3e734247e1fdedbc107438da1db23c0bf8e6c65889985a2d89fb01031"
+    },
+    {
+      "path": "output/C罗-成功定稿/复现材料/head-inspect.glb",
+      "bytes": 50301040,
+      "sha256": "2ceb30cedd7efae78efca2a4896c7c57fac79b25e75bc374fdf275b285a62c2f"
+    },
+    {
+      "path": "output/C罗-成功定稿/复现材料/body-base.glb",
+      "bytes": 45921992,
+      "sha256": "357a30638f14ff0c4fc1214c91da2c95fd8cbb0c8885a1996cfce6f46ee6cdf7"
+    },
+    {
+      "path": "output/C罗-成功定稿/复现材料/verify.py",
+      "bytes": 2251,
+      "sha256": "38abad621dace8929e7839544c6699388abc2fa93c08619bdc11c7f2ebc1f305"
+    },
+    {
+      "path": "output/C罗-成功定稿/复现材料/back.png",
+      "bytes": 91106,
+      "sha256": "4bdbf6075763b39e718764f5cc8a7a010b05ba9eb041f0e6d1371eb230fc1cdd"
+    },
+    {
+      "path": "output/C罗-成功定稿/复现材料/front.png",
+      "bytes": 92135,
+      "sha256": "3e8977937e9cb90c05d3bb00fdbc4910700c5f05cba876e7e884fc02c62a44ba"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/animate.py",
+      "bytes": 1263,
+      "sha256": "73ff1ac020a66f54ad21f39e58d96c7ef5dc7a876f4a8920418107a6179f13a0"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/render-neutral.py",
+      "bytes": 2337,
+      "sha256": "3c34be3476a42c9fa76fdf0308071676fefb5d371765499accbf7ee04ae22d41"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/build.py",
+      "bytes": 6323,
+      "sha256": "408e2a15574e1a866c767c6223f4e32b5870a9d751f3027ae9efae3d8d056355"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/celebration.py",
+      "bytes": 2335,
+      "sha256": "ad467716156b47b4503626aa38a506f1eb55733f7418bad6bd56e04270bc1a64"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/render-celebration.py",
+      "bytes": 1863,
+      "sha256": "7eaf6cca039f21dd9a8e8ec9848f6f42e1214f5a1b0dc531308c32e5c9282dcf"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/retarget.py",
+      "bytes": 4020,
+      "sha256": "befd2a5cf131ab3fca40e60e1cf1a91e149bd8177edf94912d79d1c7c4f4beb4"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/pose-correctives.py",
+      "bytes": 1025,
+      "sha256": "ab5fa592e6b3ffed64d00d12186d3fc21412e0496de9d2206ee31966c06789d3"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/finalize.py",
+      "bytes": 2327,
+      "sha256": "8cfc4e09a3b66eac5b98786ec93960641b51c55caca11d346e4597ec4bfa3bef"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/render-anatomy.py",
+      "bytes": 1874,
+      "sha256": "1dcc75d5fa01bdaef117437a96538cb45220f6ee1af248bcc41af3eef5048171"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/multi-pose-shapes.py",
+      "bytes": 3501,
+      "sha256": "027b4596c8882d6a95595b338190e83b4c3844fcdb44374b0da444e536c6a3de"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/diagnose.py",
+      "bytes": 2341,
+      "sha256": "a3e38ec872d270e1577705a479f07059780b460413bcbc77c11856fa10f31fc5"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/validate.py",
+      "bytes": 124,
+      "sha256": "178b0303f4309ff04680153eec7c4f46a8c892368bfb22aafb843c5a32addf6d"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/sync-shapes.py",
+      "bytes": 762,
+      "sha256": "0b7e99a8ddc47d70b33a75e064ce2472d601362037240df24d7b052d80bbc2f1"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/check-clips.py",
+      "bytes": 739,
+      "sha256": "621d4a09ed9252af2d22b19d936cf38f97392f4e3b59a4fa0b28e08ca12ffea0"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/plant-support.py",
+      "bytes": 3030,
+      "sha256": "c194ac04dff164ec81a19e00720e7e66fd3480b1aa1b25a28f8215e3405ef294"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/upperarm-shape.py",
+      "bytes": 6171,
+      "sha256": "6ef2db0dab22cbf2926ce9651c929a96e4e8ec93b42c15baa5f66c3872125be2"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/diagnose-angle.py",
+      "bytes": 2347,
+      "sha256": "0b0845971505d6e3b970e9c0f1410f94102d71785beb291cd5705484f0d61120"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/girdle.py",
+      "bytes": 2524,
+      "sha256": "2116c3ed1c6678bb42675fd40b677ae218c59206f302d9377b6358d025c8394d"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/audit-anatomy.py",
+      "bytes": 1505,
+      "sha256": "abef5ef964cfc1afa7fbfaa3a7af1db2931341fb32e318949872555921604d77"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/diagnose-clay.py",
+      "bytes": 2443,
+      "sha256": "f6092123f7719467285c5fcc206d0cc98fdfad21df174f6175dd65a989cd6293"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-anatomy-v8/render-poses.py",
+      "bytes": 2094,
+      "sha256": "4a9ea41ece1f388ab77d3c0bcf6bdccdc69d1aeca688b487af99b0c721c1d1b0"
+    },
+    {
+      "path": "output/C罗-成功定稿/CR7-hunyuan.blend",
+      "bytes": 185164446,
+      "sha256": "69bc8f331ac7653cc531a0e6426226e46f0e8791f535df8fa5155f805c81c124"
+    },
+    {
+      "path": "output/C罗-成功定稿/原始参考图.png",
+      "bytes": 521362,
+      "sha256": "bc5da425ba000a3c12c1948ebcb0f1727124c85b149a468873f8fc9abe93e753"
+    },
+    {
+      "path": "Like-football-game/play-v3/model-source/cr7-structure-v3/ronaldo-approved-rig.blend",
+      "bytes": 98420094,
+      "sha256": "e9aa0a959cb148abc4d1e4281f523ab691857aa155802ed5baae2cc996df5879"
+    },
+    {
+      "path": "Like-football-game/play-v3/assets/ronaldo-natural.glb",
+      "bytes": 7744928,
+      "sha256": "a5549264a42498d896e27f66de7ab4f3e06045539457d32ce077e4c8bed26141"
+    },
+    {
+      "path": "Like-football-game/play-v3/assets/mocap-contract.json",
+      "bytes": 96388,
+      "sha256": "9875fe23779bb2e35a221d69691700d4ba0c9ab32f2375f01683ae71cfb61581"
+    },
+    {
+      "path": "Like-football-game/play-v3/assets/ronaldo-independent-contract.json",
+      "bytes": 618,
+      "sha256": "c27903086630244870539ac62d5dcef999c52b058de38b6061c92e493c3f5b3c"
+    },
+    {
+      "path": "Like-football-game/play-v3/assets/ronaldo-anatomy-v8.glb",
+      "bytes": 34261940,
+      "sha256": "558219f07fbbb153e6da3b57e228efe4e862898aabebfaf863e6dfb0f4ea0107"
+    },
+    {
+      "path": "Like-football-game/play-v3/assets/ronaldo-anatomy-v8.glb.gz",
+      "bytes": 25645863,
+      "sha256": "091942ee331028169ea691a337d915ec15bcad6b88fffde37246481742f0e859"
+    },
+    {
+      "path": "Like-football-game/play-v3/shoulder-deformation.js",
+      "bytes": 2053,
+      "sha256": "9f4825d94f312d45930bc07d599a9e2fb9cf572f8573f36398c1886281e22f3f"
+    }
+  ]
+}

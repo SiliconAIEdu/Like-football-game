@@ -4,8 +4,8 @@
 <header><h1>亚马尔 · 可动模型检查</h1><a href="../index.html">返回游戏</a><p>与比赛使用同一个模型、动作与肩部修正。</p><div id="status">加载中…</div></header><div id="stage"></div>
 <nav id="actions"></nav><label>动作进度 <input id="time" type="range" min="0" max="1" step="0.01" value="0"></label><button id="pause">暂停</button><button id="front">正面</button><button id="side">侧面</button><button id="quarter">45°</button>
 <script type="module">
-import {FootballWorld} from './world.js?v=yamal-playable1';
-import {players} from './roster.js?v=yamal-playable1';
+import {FootballWorld} from './world.js?v=merged-yamal-v1';
+import {players} from './roster.js?v=merged-yamal-v1';
 const status=document.querySelector('#status'),slider=document.querySelector('#time');
 try{
  const w=new FootballWorld(document.querySelector('#stage'));const source=await w.loadPlayer(players.find(p=>p.id==='yamal'),p=>status.textContent=`加载 ${p}%`);const a=w.player;
