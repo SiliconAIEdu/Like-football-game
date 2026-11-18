@@ -57,3 +57,22 @@ test('a moving glove can intercept the ball between frames without saving a near
  assert.ok(hit>0&&hit<.5);
  assert.equal(movingContact(from,to,{...previous,y:1.3},{...current,y:1.3},.16),null);
 });
+
+
+test('expert keeper targets vary the third shot and centre position across matches',()=>{
+ let seed=20261118;
+ const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2**32;};
+ const thirdDirections=new Set(),centreRounds=new Set(),heights=new Set();
+ for(let match=0;match<100;match++){
+  const shots=randomKeeperTargets(random,true);
+  assert.equal(shots.length,5);
+  assert.ok(shots.every(inGoal));
+  assert.equal(shots.filter(s=>Math.abs(s.x)<.3).length,1);
+  centreRounds.add(shots.findIndex(s=>Math.abs(s.x)<.3));
+  thirdDirections.add(Math.abs(shots[2].x)<.3?'centre':shots[2].x<0?'left':'right');
+  heights.add(shots[2].y<.9?'low':shots[2].y<1.7?'mid':'high');
+ }
+ assert.equal(centreRounds.size,5);
+ assert.equal(thirdDirections.size,3);
+ assert.equal(heights.size,3);
+});

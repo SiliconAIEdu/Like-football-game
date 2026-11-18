@@ -76,7 +76,13 @@ function shuffled(items,random){
 }
 
 // Keep a full set of practice shots while varying their order and exact targets.
-export function randomKeeperTargets(random=Math.random){
+export function randomKeeperTargets(random=Math.random,varied=false){
+ // Expert practice varies both direction and height; no round owns the centre.
+ if(varied)return shuffled([-3,-1.5,0,1.5,3],random).map(x=>({
+  x:x+(random()*2-1)*.22,
+  y:.25+random()*2,
+  z:GOAL_Z
+ }));
  return shuffled([-1,-1,1,1,0],random).map(side=>({
   x:side===0?(random()*2-1)*2.7:side*(2.8+random()*.6),
   y:side===0?.22+random()*.43:2+random()*.28,
