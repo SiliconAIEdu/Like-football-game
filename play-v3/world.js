@@ -59,7 +59,7 @@ export class FootballWorld{
   if(serial!==this.loadSerial)return;
   this.keeperReference=keeperReference;
   const opponentId=star.id==='courtois'?'mbappe':'courtois';
-  const opponent=this.getModel(opponentId==='courtois'?'assets/courtois-game-v1.glb':`assets/players/${opponentId}.glb`).catch(()=>motionModel);
+  const opponent=this.getModel(opponentId==='courtois'?'assets/courtois-game-v4.glb':`assets/players/${opponentId}.glb`).catch(()=>motionModel);
   const reactions=this.getModel('assets/crowd/fan-1-lod.glb').catch(()=>null);
   const readContract=url=>fetch(url,{signal:AbortSignal.timeout?.(15000)})
    .then(response=>response.ok?response.json():null).catch(()=>null);
@@ -67,7 +67,7 @@ export class FootballWorld{
    readContract('assets/mocap-contract.json?v=3j'),
    readContract('assets/strike-contract.json'),
    readContract('assets/ronaldo-independent-contract.json'),
-   star.id==='courtois'?readContract('assets/courtois-game-v1-contact.json'):star.id==='bellingham'?readContract('assets/bellingham-game-v1-contact.json'):star.id==='messi'?readContract('assets/messi-game-v1-contact.json'):star.id==='mbappe'?readContract('assets/mbappe-game-v1-contact.json'):star.id==='neymar'?readContract('assets/neymar-game-v2-contact.json'):star.id==='yamal'?readContract('assets/yamal-playable-v1-contact.json'):Promise.resolve(null)
+   star.id==='courtois'?readContract('assets/courtois-game-v4-contact.json'):star.id==='bellingham'?readContract('assets/bellingham-game-v1-contact.json'):star.id==='messi'?readContract('assets/messi-game-v1-contact.json'):star.id==='mbappe'?readContract('assets/mbappe-game-v1-contact.json'):star.id==='neymar'?readContract('assets/neymar-game-v2-contact.json'):star.id==='yamal'?readContract('assets/yamal-playable-v1-contact.json'):Promise.resolve(null)
   ]);
   const [source,ronaldo,npc,emotions,[motionData,strikeContract,independentContract,yamalContract]]=await Promise.all(
    [this.getModel(star.model),motionModel,opponent,reactions,contracts].map(async request=>{

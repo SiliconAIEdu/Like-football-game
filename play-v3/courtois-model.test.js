@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import zlib from 'node:zlib';import {players} from './roster.js';
-test('Courtois corrected game model, gzip and dedicated contract agree',()=>{const p=players.find(p=>p.id==='courtois');assert.equal(p.model,'assets/courtois-game-v1.glb');const b=fs.readFileSync(new URL(p.model,import.meta.url));assert.deepEqual(zlib.gunzipSync(fs.readFileSync(new URL(p.model+'.gz',import.meta.url))),b);const g=JSON.parse(b.subarray(20,20+b.readUInt32LE(12)).toString());for(const name of ['Idle','Run','Walk','Kick','RunStop','ReactGoal','ReactMiss','Dive','DiveMirror'])assert.ok(g.animations.some(a=>a.name===name));const c=JSON.parse(fs.readFileSync(new URL('assets/courtois-game-v1-contact.json',import.meta.url)));assert.equal(c.time,.9);assert.ok(c.clips.some(c=>c.name==='Kick'));assert.ok(Object.values(c.contact).every(Number.isFinite));});
+test('Courtois corrected game model, gzip and dedicated contract agree',()=>{const p=players.find(p=>p.id==='courtois');assert.equal(p.model,'assets/courtois-game-v4.glb');const b=fs.readFileSync(new URL(p.model,import.meta.url));assert.deepEqual(zlib.gunzipSync(fs.readFileSync(new URL(p.model+'.gz',import.meta.url))),b);const g=JSON.parse(b.subarray(20,20+b.readUInt32LE(12)).toString());for(const name of ['Idle','Run','Walk','Kick','RunStop','ReactGoal','ReactMiss','Dive','DiveMirror'])assert.ok(g.animations.some(a=>a.name===name));const c=JSON.parse(fs.readFileSync(new URL('assets/courtois-game-v4-contact.json',import.meta.url)));assert.equal(c.time,.9);assert.ok(c.clips.some(c=>c.name==='Kick'));assert.ok(Object.values(c.contact).every(Number.isFinite));});
 
 import * as T from '../vendor/three.module.js';
 function asset(path){
@@ -11,16 +11,14 @@ function asset(path){
  return {scene,animations};
 }
 
-test('Courtois dedicated dives raise both gloves in front of the body',()=>{
- for(const name of ['Dive','DiveMirror']){
-  const {scene,animations}=asset('./assets/courtois-game-v1.glb');
-  const clip=animations.find(a=>a.name===name),mixer=new T.AnimationMixer(scene);
-  mixer.clipAction(clip).play();mixer.setTime(clip.duration*.5);scene.updateMatrixWorld(true);
-  for(const side of ['l','r']){
-   const shoulder=scene.getObjectByName('upperarm_'+side).getWorldPosition(new T.Vector3());
-   const wrist=scene.getObjectByName('hand_'+side).getWorldPosition(new T.Vector3());
-   assert.ok(wrist.y>shoulder.y+.2,name+' glove is raised');
-   assert.ok(wrist.z>shoulder.z+.1,name+' glove remains in front');
-  }
+test('Courtois baked actions follow Yamal arm directions',()=>{
+ const ref=asset('./assets/yamal-playable-v1.glb');
+ const target=asset('./assets/courtois-game-v4.glb');
+ for(const name of ['Idle','Run','Kick','ReactGoal','ReactMiss','Dive']){
+  const a=ref.animations.find(c=>c.name.replace(/_Ronaldo_Rig$/,'')===name),b=target.animations.find(c=>c.name===name);
+  const rm=new T.AnimationMixer(ref.scene),tm=new T.AnimationMixer(target.scene);rm.clipAction(a).play();tm.clipAction(b).play();
+  for(const phase of [.2,.5,.8]){rm.setTime(a.duration*phase);tm.setTime(b.duration*phase);ref.scene.updateMatrixWorld(true);target.scene.updateMatrixWorld(true);
+   for(const side of ['l','r']){const dir=s=>s.getObjectByName('hand_'+side).getWorldPosition(new T.Vector3()).sub(s.getObjectByName('lowerarm_'+side).getWorldPosition(new T.Vector3())).normalize();assert.ok(dir(ref.scene).dot(dir(target.scene))>.98,name+' forearm '+side);}
+  }rm.stopAllAction();tm.stopAllAction();
  }
 });

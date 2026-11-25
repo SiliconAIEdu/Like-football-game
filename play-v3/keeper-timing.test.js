@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+import{KEEPER_DIVE_SECONDS,KEEPER_RECOVERY_SECONDS,keeperCanDive,tickKeeperRecovery}from './keeper-timing.js';
+test('keeper uses native Yamal clip duration without speed-up',()=>{const b=fs.readFileSync(new URL('./assets/yamal-playable-v1.glb',import.meta.url));const g=JSON.parse(b.subarray(20,20+b.readUInt32LE(12)));const clip=g.animations.find(a=>a.name==='Dive_Ronaldo_Rig');const duration=Math.max(...clip.samplers.map(s=>g.accessors[s.input].max[0]));assert.ok(Math.abs(KEEPER_DIVE_SECONDS-duration)<1e-5);});
+test('keeper cannot immediately repeat a completed dive',()=>{const a={diveRecoveryLeft:KEEPER_RECOVERY_SECONDS};assert.equal(keeperCanDive(a),false);tickKeeperRecovery(a,.3);assert.equal(keeperCanDive(a),false);tickKeeperRecovery(a,1);assert.equal(keeperCanDive(a),true);assert.equal(a.diveRecoveryLeft,0);});

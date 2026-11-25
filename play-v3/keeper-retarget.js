@@ -16,7 +16,7 @@ export function yamalKeeperClips(reference,target){
   return retargetDive(reference.scene,target,clip);
  });
 }
-export function retargetDive(sourceScene,targetScene,clip){
+export function retargetDive(sourceScene,targetScene,clip,stableTwist=false){
  const source=rigCopy(sourceScene),target=rigCopy(targetScene);
  source.updateMatrixWorld(true);target.updateMatrixWorld(true);
  const pairs=[];
@@ -35,10 +35,12 @@ export function retargetDive(sourceScene,targetScene,clip){
    bone.position.copy(p.position);
    const world=from.getWorldQuaternion(new THREE.Quaternion()).multiply(p.sourceRest).multiply(p.targetRest);
    if(child&&sourceChild&&/^(upperarm|lowerarm|thigh|calf|hand)_/.test(bone.name)){
+    if(stableTwist&&/^(upperarm|lowerarm)_/.test(bone.name))world.copy(p.targetRest);
     const actual=child.position.clone().normalize().applyQuaternion(world);
     const wanted=sourceChild.getWorldPosition(new THREE.Vector3()).sub(from.getWorldPosition(new THREE.Vector3())).normalize();
     if(actual.lengthSq()&&wanted.lengthSq())world.premultiply(new THREE.Quaternion().setFromUnitVectors(actual,wanted));
    }
+   if(stableTwist&&/^clavicle_/.test(bone.name))world.copy(p.targetRest);
    const parent=bone.parent?.getWorldQuaternion(new THREE.Quaternion())||new THREE.Quaternion();
    bone.quaternion.copy(parent.clone().invert().multiply(world));
    if(bone.name==='pelvis'){

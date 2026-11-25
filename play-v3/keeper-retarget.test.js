@@ -9,7 +9,7 @@ function asset(path){
  return {scene,animations};
 }
 const reference=asset('./assets/yamal-playable-v1.glb');
-for(const file of ['yamal-playable-v1','mbappe-game-v3','messi-game-v1','neymar-game-v2','ronaldo-anatomy-v8','courtois-game-v1','players/haaland','players/salah','players/bellingham'])test(file+' receives both Yamal dives without changing bone lengths',()=>{
+for(const file of ['yamal-playable-v1','mbappe-game-v3','messi-game-v1','neymar-game-v2','ronaldo-anatomy-v8','courtois-game-v4','players/haaland','players/salah','players/bellingham'])test(file+' receives both Yamal dives without changing bone lengths',()=>{
  const target=asset('./assets/'+file+'.glb'),clips=yamalKeeperClips(reference,target.scene);
  assert.deepEqual(clips.map(c=>c.name),['Dive','DiveMirror']);
  const lengths=new Map();target.scene.traverse(o=>{if(/^(calf|foot|lowerarm|hand)_/.test(o.name))lengths.set(o.name,o.position.length());});
