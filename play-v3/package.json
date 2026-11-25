@@ -2,6 +2,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test bellingham-model.test.js rules.test.js motion.test.js locomotion.test.js approved-model.test.js gait-phase.test.js actor-motion.test.js limb-motion.test.js yamal-model.test.js neymar-model.test.js mbappe-model.test.js messi-model.test.js keeper-ground.test.js keeper-retarget.test.js shot-starts.test.js courtois-model.test.js keeper-timing.test.js"
+    "test": "node --test deploy-assets.test.js bellingham-model.test.js rules.test.js motion.test.js locomotion.test.js approved-model.test.js gait-phase.test.js actor-motion.test.js limb-motion.test.js yamal-model.test.js neymar-model.test.js mbappe-model.test.js messi-model.test.js keeper-ground.test.js keeper-retarget.test.js shot-starts.test.js courtois-model.test.js keeper-timing.test.js"
   }
 }
