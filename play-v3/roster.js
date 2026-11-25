@@ -6,14 +6,13 @@ export const players=[
 {id:'mbappe',name:'姆巴佩',full:'KYLIAN MBAPPÉ',country:'法国',number:10,tag:'全速向前',deep:'#101a37',base:'#294a8e',shine:'#a7c8ff',glow:'#33457f'},
 {id:'haaland',name:'哈兰德',full:'ERLING HAALAND',country:'挪威',number:9,tag:'全力一击',deep:'#311c10',base:'#9b5e2e',shine:'#f2cd91',glow:'#7b4a25'},
 {id:'neymar',name:'内马尔',full:'NEYMAR JR.',country:'巴西',number:10,tag:'踢出灵感',deep:'#1c2b16',base:'#50713a',shine:'#d7eaaa',glow:'#4e6529'},
-{id:'salah',name:'萨拉赫',full:'MOHAMED SALAH',country:'埃及',number:11,tag:'奔向球门',deep:'#33131d',base:'#9e3945',shine:'#f3b69d',glow:'#7e3435'},
 {id:'bellingham',name:'贝林厄姆',full:'JUDE BELLINGHAM',country:'英格兰',number:10,tag:'迎接挑战',deep:'#242133',base:'#655d80',shine:'#e1d6f4',glow:'#625675'}
 ];
 
-const heights={yamal:1.80,ronaldo:1.87,courtois:1.99,messi:1.70,mbappe:1.78,haaland:1.94,neymar:1.75,salah:1.75,bellingham:1.86};
-for(const p of players){p.height=heights[p.id];p.image=p.id==='yamal'?'assets/yamal-card-portrait.png':p.id==='ronaldo'?'assets/ronaldo-holo-portrait.png':'../game/assets/'+(p.id==='messi'?'messi-photo.jpg':p.id+'.png');p.model=p.id==='yamal'?'assets/yamal-playable-v1.glb':p.id==='ronaldo'?'assets/ronaldo-anatomy-v8.glb':'assets/players/'+p.id+'.glb'}
+const heights={yamal:1.80,ronaldo:1.87,courtois:1.99,messi:1.70,mbappe:1.78,haaland:1.94,neymar:1.75,bellingham:1.86};
+for(const p of players){p.height=heights[p.id];p.image=p.id==='yamal'?'assets/yamal-card-portrait.png':p.id==='ronaldo'?'assets/ronaldo-holo-portrait.png':'../game/assets/'+(p.id==='messi'?'messi-photo.jpg':p.id+'.png');p.model=p.id==='courtois'?'assets/courtois-game-v1.glb':p.id==='bellingham'?'assets/bellingham-game-v1.glb':p.id==='messi'?'assets/messi-game-v1.glb':p.id==='mbappe'?'assets/mbappe-game-v3.glb':p.id==='neymar'?'assets/neymar-game-v2.glb':p.id==='yamal'?'assets/yamal-playable-v1.glb':p.id==='ronaldo'?'assets/ronaldo-anatomy-v8.glb':'assets/players/'+p.id+'.glb'}
 
-const roles={ronaldo:'前锋',yamal:'右边锋',courtois:'门将',messi:'前锋',mbappe:'前锋',haaland:'中锋',neymar:'边锋',salah:'右边锋',bellingham:'中场'};
+const roles={ronaldo:'前锋',yamal:'右边锋',courtois:'门将',messi:'前锋',mbappe:'前锋',haaland:'中锋',neymar:'边锋',bellingham:'中场'};
 export function loadPortrait(image,source){
  image.decoding='async';
  image.addEventListener('error',()=>{image.src=source},{once:true});

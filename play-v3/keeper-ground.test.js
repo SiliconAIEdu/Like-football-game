@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import * as T from '../vendor/three.module.js';import {resetKeeperGround,keepKeeperAboveGround} from './keeper-ground.js';
+test('keeper sole stays above turf through both dive tilts, without accumulating height',()=>{
+ const root=new T.Group(),model=new T.Group();root.add(model);const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute([-.2,.004,0,.2,.004,0,-.2,.1,0,.2,.1,0],3));geo.setAttribute('skinIndex',new T.Uint16BufferAttribute(new Array(16).fill(0),4));geo.setAttribute('skinWeight',new T.Float32BufferAttribute([1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],4));const mesh=new T.SkinnedMesh(geo,new T.MeshBasicMaterial()),bone=new T.Bone();mesh.add(bone);mesh.bind(new T.Skeleton([bone]));model.add(mesh);const actor={root,model,mbappe:true,tracksIncomingBall:true};
+ keepKeeperAboveGround(actor);
+ for(const tilt of Array.from({length:120},(_,i)=>.69*Math.sin(i/119*Math.PI*2))){resetKeeperGround(actor);root.rotation.z=tilt;keepKeeperAboveGround(actor);mesh.skeleton.update();assert.ok(model.position.y<.3,'no accumulated lift across rendered frames');root.updateMatrixWorld(true);for(let i=0;i<4;i++){const p=mesh.getVertexPosition(i,new T.Vector3()).applyMatrix4(mesh.matrixWorld);assert.ok(p.y>=.0079,`${tilt}: ${p.y}`);}}
+ assert.ok(model.position.y<.005,'returns to baseline after landing');
+});

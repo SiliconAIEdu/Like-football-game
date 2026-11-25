@@ -1,0 +1,12 @@
+{
+  "version": "666",
+  "date": "2026-11-25",
+  "players": 8,
+  "changes": [
+    "Bellingham continuous head-neck model",
+    "Courtois dedicated model and dive animations",
+    "Remove Salah from roster",
+    "Include current Messi Mbappe Neymar models and keeper fixes"
+  ],
+  "tests_passed": 48
+}

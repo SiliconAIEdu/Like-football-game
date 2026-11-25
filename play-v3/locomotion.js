@@ -10,7 +10,7 @@ export class Locomotion {
   constructor(world,actor){this.world=world;this.actor=actor;this.speed=0;this.turn=null;this.travel=0;this.lastInput=new THREE.Vector3();this.stop=null;}
   reset(){this.speed=0;this.turn=null;this.stop=null;this.travel=0;this.actor.motionState='idle';}
   playRecorded(name){
-    const clip=this.world.motionInfo(name);if(!clip?.root?.length)return false;
+    const clip=this.world.motionInfo(name,this.actor);if(!clip?.root?.length)return false;
     const scale=this.actor.height/1.87;
     const entry=trajectorySpeed(clip,0)*scale;
     const rate=clamp(this.speed/Math.max(.5,entry),.65,1.45);
@@ -22,7 +22,7 @@ export class Locomotion {
     const desiredYaw=has?Math.atan2(input.x,input.z):a.root.rotation.y;
     let delta=wrapAngle(desiredYaw-a.root.rotation.y);
     const factor=a.height/1.87;
-    const base=(w.motionInfo('run')?.nominalSpeed||3.5)*factor;
+    const base=(w.motionInfo('run',a)?.nominalSpeed||3.5)*factor;
     if(this.turn?.name==='stop'&&has&&this.turn.time>.35){this.turn=null;this.speed=.6;}
     if(this.turn){
       const tr=this.turn;tr.time+=dt*tr.rate;
@@ -33,7 +33,7 @@ export class Locomotion {
       return this.speed;
     }
     if(recordedTurns&&has&&this.speed>base*.55&&Math.abs(delta)>.95){
-      const choices=['turnleft','turnright'].map(name=>({name,clip:w.motionInfo(name)}));
+      const choices=['turnleft','turnright'].map(name=>({name,clip:w.motionInfo(name,a)}));
       const match=choices.find(c=>c.clip?.root?.length&&Math.sign(c.clip.root.at(-1).yaw)===Math.sign(delta));
       if(match&&this.playRecorded(match.name))return this.speed;
     }
