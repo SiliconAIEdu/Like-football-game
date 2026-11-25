@@ -1,3 +1,4 @@
+import {diveEnvelope,beginDivePlant} from './keeper-biomechanics.js?v=1';
 import {KEEPER_DIVE_SECONDS,KEEPER_RECOVERY_SECONDS,keeperCanDive,tickKeeperRecovery} from './keeper-timing.js';
 import {randomShotStarts} from './shot-starts.js?v=1';
 let shotStarts=[];
@@ -5,8 +6,8 @@ import {difficultyFor} from './difficulty.js?v=2';
 import * as THREE from 'three';
 import {QUICK_KICK_START,RonaldoDribble} from './ronaldo-motion.js?v=3w';
 import {Locomotion,sampleRoot,rootInWorld,wrapAngle} from './locomotion.js?v=3j';
-import {players,buildRoster,cardDesign} from './roster.js?v=courtois-approved-v4';
-import {FootballWorld} from './world.js?v=courtois-approved-v4';
+import {players,buildRoster,cardDesign} from './roster.js?v=haaland-v1';
+import {FootballWorld} from './world.js?v=haaland-dive-v1';
 import {MatchAudio} from './audio.js?v=3j';
 import {clamp,flight,flightPoint,inGoal,sweptContact,movingContact,GRAVITY,randomRefScenarios,randomKeeperTargets,shotTarget,BEST_POWER_MIN,BEST_POWER_MAX,GOAL_Z,strikeRoot} from './rules.js?v=keeper-random-v3';
 const $=s=>document.querySelector(s),screens=[...document.querySelectorAll('.screen')],audio=new MatchAudio(),keys=new Set();
@@ -32,6 +33,21 @@ let refRounds=[],refReplayT=null;
 let keeperTargets=[];
 let chosen=players[0],loadedId=null,loadSerial=0;
 let role='player',screen='start',loaded=false,loading=null,paused=false,phase='idle',phaseT=0,round=0,score=0,results=[],totalTime=0,shotTime=0,power=0,charging=false,aim={x:1.5,y:1.2,z:GOAL_Z},ballFlight=null,flightT=0,diveT=-1,diveDir=0,refPhase=0;const actorPos=new THREE.Vector3(),velocity=new THREE.Vector3();let strikePlayed=false,shotRoot=null,shotOrigin=null;
+const opponents={player:'courtois',keeper:'ronaldo',referee:'ronaldo',second:'messi'};
+function matchLineup(){return {opponent:players.find(p=>p.id===opponents[role]),extra:role==='referee'?players.find(p=>p.id===opponents.second):null};}
+function lineupKey(){const team=matchLineup();return [chosen.id,role,team.opponent.id,team.extra?.id||''].join(':');}
+function renderOpponents(){
+ const first=$('#opponent-first'),second=$('#opponent-second');
+ $('#opponent-label').textContent=role==='player'?'对方门将':role==='keeper'?'对方射手':'持球球员';
+ $('#opponent-second-label').hidden=role!=='referee';
+ if(role==='referee'&&opponents.referee===opponents.second)opponents.second=players.find(p=>p.id!==opponents.referee).id;
+ first.replaceChildren(...players.map(p=>new Option(p.name,p.id,false,p.id===opponents[role])));
+ second.replaceChildren(...players.filter(p=>p.id!==opponents.referee).map(p=>new Option(p.name,p.id,false,p.id===opponents.second)));
+ const team=matchLineup();
+ $('#lineup-summary').textContent=role==='referee'?`${team.opponent.name} 对阵 ${team.extra.name}`:`${chosen.name} 对阵 ${team.opponent.name}`;
+}
+$('#opponent-first').onchange=e=>{opponents[role]=e.target.value;renderOpponents();load();};
+$('#opponent-second').onchange=e=>{opponents.second=e.target.value;renderOpponents();load();};
 function chooseStar(p){chosen=p;document.querySelectorAll('[data-player]').forEach(b=>{const active=b.dataset.player===p.id;b.setAttribute('aria-pressed',String(active));b.querySelector('.selected-mark').textContent=active?'✓ 已选择':'选择'});$('#chosen-name').textContent=p.name;$('#chosen-country').textContent=`${p.country} · ${p.number} 号`;$('#choose-role').textContent=`选定 ${p.name} →`;$('#role-star').textContent=p.name;try{localStorage.setItem('homeground-v3-star',p.id)}catch{}}
 buildRoster($('#roster'),chooseStar);chooseStar(players[0]);
 const fullCard=$('#full-player-card');
@@ -46,10 +62,10 @@ fullCard.addEventListener('close',()=>cardFrame.removeAttribute('src'));
 function go(next){if(!screens.some(s=>s.id===next))next='start';screen=next;document.body.dataset.screen=next;for(const el of screens)el.hidden=el.id!==next;$('#pause').hidden=next!=='match';$('#view').hidden=next!=='match';keys.clear();cancelCharge();paused=false;$('#pause-panel').hidden=true;world.endCutaway();document.body.dataset.cutaway='false';$('#broadcast').hidden=true;world.aim.visible=next==='match'&&role==='player';if(next!=='match'){phase='idle';world.cameraMode=next==='brief'?'portrait':'menu';if(loaded){world.clearKeeperCatch(world.player);world.clearKeeperCatch(world.opponent);world.player.root.visible=next==='brief';world.player.root.position.set(0,0,0);world.player.root.rotation.set(0,0,0);world.animate(world.player,'idle');world.opponent.root.visible=false;world.extra.root.visible=false}world.ball.visible=next==='start';}if(location.hash||location.search)history.replaceState(null,'',location.pathname);const heading=$('#'+next+' h1, #'+next+' h2');if(heading){heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true})}}
 $('#choose-star').onclick=()=>go('stars');$('#choose-role').onclick=()=>go('roles');document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>go(b.dataset.back));$('.brand').onclick=e=>{e.preventDefault();if(screen==='match')togglePause();else go('start')};
 document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{role=b.dataset.role;document.querySelectorAll('[data-role]').forEach(o=>{o.classList.toggle('active',o===b);o.setAttribute('aria-pressed',String(o===b))});$('#role-selected').textContent=roles[role].name});
-async function load(){if(loadedId===chosen.id&&loaded)return;const ticket=++loadSerial;loaded=false;const current=chosen;$('#kickoff').disabled=true;$('#kickoff').textContent='球员准备中…';$('#load-status').textContent=`${current.name}正在入场…`;
- loading=world.loadPlayer(current,p=>{if(ticket===loadSerial)$('#load-status').textContent=`${current.name}入场中 · ${p}%`}).then(()=>{if(ticket!==loadSerial)return;loaded=true;loadedId=current.id;locomotion=new Locomotion(world,world.player);npcMotion=new Locomotion(world,world.opponent);world.player.root.visible=screen==='brief';world.player.root.position.set(0,0,0);world.player.root.rotation.set(0,0,0);world.setRole(role);$('#load-status').textContent=`${current.name}已准备好`;$('#kickoff').disabled=false;$('#kickoff').textContent='开始比赛 ↗';}).catch(e=>{if(ticket!==loadSerial)return;$('#load-status').textContent=`${current.name}暂时未能加载，请重试或选择另一位球星。`;$('#kickoff').disabled=false;$('#kickoff').textContent='重新加载球员';loading=null;console.error(e)});return loading}
-$('#prepare').onclick=()=>{const r=roles[role];$('#brief-title').textContent=r.title;$('#brief-goal').textContent=r.goal;$('#instructions').innerHTML=r.instruction;go('brief');if(loaded&&loadedId===chosen.id){world.setRole(role);$('#kickoff').disabled=false;$('#kickoff').textContent='开始比赛 ↗';$('#load-status').textContent=`${chosen.name}已准备好`}else{if(world.player)world.player.root.visible=false;load()}};
-$('#kickoff').onclick=()=>{if(!loaded){$('#kickoff').disabled=true;load().catch(()=>{});return}startMatch()};$('#again').onclick=startMatch;$('#change-role').onclick=()=>go('roles');
+async function load(){if(loadedId===lineupKey()&&loaded)return;const ticket=++loadSerial;loaded=false;const current=chosen,currentKey=lineupKey(),team=matchLineup();$('#kickoff').disabled=true;$('#kickoff').textContent='球员准备中…';$('#load-status').textContent=`${current.name}正在入场…`;
+ loading=world.loadPlayer(current,p=>{if(ticket===loadSerial)$('#load-status').textContent=`${current.name}入场中 · ${p}%`},team).then(()=>{if(ticket!==loadSerial)return;loaded=true;loadedId=currentKey;locomotion=new Locomotion(world,world.player);npcMotion=new Locomotion(world,world.opponent);world.player.root.visible=screen==='brief';world.player.root.position.set(0,0,0);world.player.root.rotation.set(0,0,0);world.setRole(role);$('#load-status').textContent=`${current.name}已准备好`;$('#kickoff').disabled=false;$('#kickoff').textContent='开始比赛 ↗';}).catch(e=>{if(ticket!==loadSerial)return;$('#load-status').textContent=`${current.name}暂时未能加载，请重试或选择另一位球星。`;$('#kickoff').disabled=false;$('#kickoff').textContent='重新加载球员';loading=null;console.error(e)});return loading}
+$('#prepare').onclick=()=>{const r=roles[role];$('#brief-title').textContent=r.title;$('#brief-goal').textContent=r.goal;$('#instructions').innerHTML=r.instruction;renderOpponents();go('brief');if(loaded&&loadedId===lineupKey()){world.setRole(role);$('#kickoff').disabled=false;$('#kickoff').textContent='开始比赛 ↗';$('#load-status').textContent=`${chosen.name}已准备好`}else{if(world.player)world.player.root.visible=false;load()}};
+$('#kickoff').onclick=()=>{if(!loaded){$('#kickoff').disabled=true;load().catch(()=>{});return}startMatch()};$('#again').onclick=()=>$('#prepare').click();$('#change-role').onclick=()=>go('roles');
 $('#sound').onclick=()=>{const enabled=audio.toggle();$('#sound').textContent='声音 '+(enabled?'开':'关');$('#sound').setAttribute('aria-pressed',String(enabled))};
 function togglePause(force){if(screen!=='match')return;paused=typeof force==='boolean'?force:!paused;$('#pause-panel').hidden=!paused;keys.clear();cancelCharge()}
 $('#view').onclick=()=>{world.sideView=!world.sideView;$('#view').textContent=world.sideView?'视角：场边':'视角：跟随'};
@@ -83,8 +99,8 @@ function cancelCharge(){
  power=0;
  updatePower();
 }
-function startMatch(){if(role==='player')shotStarts=randomShotStarts();if(role==='referee')refRounds=randomRefScenarios();if(role==='keeper')keeperTargets=randomKeeperTargets(Math.random,difficultyId==='expert');document.body.dataset.role=role;$('#touch-pad').hidden=role==='player';go('match');world.startCrowd();round=0;score=0;results=[];totalTime=0;world.cameraMode=role;world.player.root.visible=true;world.opponent.root.visible=true;world.extra.root.visible=role==='referee';world.setRole(role);world.selectedStar=chosen.id;$('#mode-label').textContent=roles[role].label+' · '+difficulty.name;$('#player-tag').textContent=`${chosen.name} · ${roles[role].name}`;$('#shot-controls').hidden=role==='referee';$('#ref-controls').hidden=role!=='referee';$('.power-label').hidden=role!=='player';$('.power-track').hidden=role!=='player';$('#action').textContent=role==='keeper'?'扑救！':'射门';$('#match-help').innerHTML=role==='player'?'每轮不同位置 · 瞄准后射门<br>点球门锁定落点，按住按钮或空格蓄力，松开射门<br>绿色区域为最佳力度 ·　<kbd>R</kbd> 重新摆球':role==='keeper'?'<kbd>A D</kbd> 移动　<kbd>空格</kbd> 扑救<br>观察球路，守住球门':'<kbd>W A S D</kbd> 跟随跑动<br><kbd>F</kbd> 犯规　<kbd>C</kbd> 继续';resetRound();audio.whistle()}
-function resetRound(){cancelCharge();ronaldoDribble.reset();reboundActive=false;aiDiveUsed=false;refReplayT=null;$('#ref-replay').disabled=true;$('#aim-status').textContent='点击球门选择落点';$('#action').textContent=role==='keeper'?'扑救！':'射门';locomotion?.reset();npcMotion?.reset();rollingVelocity.set(0,0,0);shotPending=false;world.player.strike=null;world.player.reactionUntil=0;phase='countdown';phaseT=0;world.endCutaway();document.body.dataset.cutaway='false';$('#broadcast').hidden=true;velocity.set(0,0,0);shotTime=0;ballFlight=null;flightT=0;diveT=-1;world.player.diveReach=null;world.opponent.diveReach=null;world.player.diveRecoveryLeft=0;world.opponent.diveRecoveryLeft=0;world.player.glovePositions?.clear();world.opponent.glovePositions?.clear();world.clearKeeperCatch(world.player);world.clearKeeperCatch(world.opponent);power=0;charging=false;world.ball.visible=true;world.player.root.rotation.set(0,role==='keeper'?0:Math.PI+(world.motionInfo('kick')?.root?.[0]?.yaw||0),0);world.opponent.root.rotation.set(0,Math.PI,0);world.setSpeed(world.player,1);world.setSpeed(world.opponent,1);world.extra.root.rotation.set(0,Math.PI/2,0);world.animate(world.player,'idle');world.animate(world.opponent,'idle');world.animate(world.extra,'idle');if(role==='player'){world.player.root.position.set((round%3-1)*1.5,0,3);world.opponent.root.position.set(0,0,-13.3);world.opponent.root.rotation.y=0;aim={x:round%2? -1.8:1.8,y:1.15,z:GOAL_Z};const contact=world.player.strikeContract?.contact||world.motionData?.kick?.contact||{x:.12,z:.85};const spot=shotStarts[round];world.ball.position.set(spot.x,.12,GOAL_Z+spot.distance);const heading=Math.atan2(aim.x-world.ball.position.x,aim.z-world.ball.position.z),ready=strikeRoot(world.ball.position,heading,contact,chosen.height/1.87);world.player.root.position.set(ready.x,0,ready.z);world.player.root.rotation.y=heading+(world.motionInfo('kick')?.root?.[0]?.yaw||0);world.aim.position.set(aim.x,aim.y,GOAL_Z+.05)}else if(role==='keeper'){world.player.root.position.set(0,0,-13.2);world.opponent.root.position.set((round%3-1)*2,0,-1);const contact=world.motionData?.kick?.contact||{x:0,z:.6};world.ball.position.set(world.opponent.root.position.x-contact.x*world.opponent.height/1.87,.12,world.opponent.root.position.z-contact.z*world.opponent.height/1.87)}else{world.player.root.position.set(3.8,0,.5);world.player.root.rotation.y=-Math.PI/2;placeRefScene(0);$('#foul').disabled=true;$('#play-on').disabled=true}announce('准备好了吗？',role==='player'?'本轮射门位置已就绪，瞄准后蓄力射门':role==='keeper'?'观察来球，随时准备扑救':'跟上球员，留意争球时的接触',`ROUND ${round+1}`);updateScore();updatePower()}
+function startMatch(){if(role==='player')shotStarts=randomShotStarts();if(role==='referee')refRounds=randomRefScenarios();if(role==='keeper')keeperTargets=randomKeeperTargets(Math.random,difficultyId==='expert');document.body.dataset.role=role;$('#touch-pad').hidden=role==='player';go('match');world.startCrowd();round=0;score=0;results=[];totalTime=0;world.cameraMode=role;world.player.root.visible=true;world.opponent.root.visible=true;world.extra.root.visible=role==='referee';world.setRole(role);world.selectedStar=chosen.id;$('#mode-label').textContent=roles[role].label+' · '+difficulty.name;$('#player-tag').textContent=`${chosen.name} · ${roles[role].name}｜${$('#lineup-summary').textContent}`;$('#shot-controls').hidden=role==='referee';$('#ref-controls').hidden=role!=='referee';$('.power-label').hidden=role!=='player';$('.power-track').hidden=role!=='player';$('#action').textContent=role==='keeper'?'扑救！':'射门';$('#match-help').innerHTML=role==='player'?'每轮不同位置 · 瞄准后射门<br>点球门锁定落点，按住按钮或空格蓄力，松开射门<br>绿色区域为最佳力度 ·　<kbd>R</kbd> 重新摆球':role==='keeper'?'<kbd>A D</kbd> 移动　<kbd>空格</kbd> 扑救<br>观察球路，守住球门':'<kbd>W A S D</kbd> 跟随跑动<br><kbd>F</kbd> 犯规　<kbd>C</kbd> 继续';resetRound();audio.whistle()}
+function resetRound(){cancelCharge();ronaldoDribble.reset();reboundActive=false;aiDiveUsed=false;refReplayT=null;$('#ref-replay').disabled=true;$('#aim-status').textContent='点击球门选择落点';$('#action').textContent=role==='keeper'?'扑救！':'射门';locomotion?.reset();npcMotion?.reset();rollingVelocity.set(0,0,0);shotPending=false;world.player.strike=null;world.player.reactionUntil=0;phase='countdown';phaseT=0;world.endCutaway();document.body.dataset.cutaway='false';$('#broadcast').hidden=true;velocity.set(0,0,0);shotTime=0;ballFlight=null;flightT=0;diveT=-1;world.player.diveReach=null;world.opponent.diveReach=null;world.player.diveRecoveryLeft=0;world.opponent.diveRecoveryLeft=0;world.player.glovePositions?.clear();world.opponent.glovePositions?.clear();world.clearKeeperCatch(world.player);world.clearKeeperCatch(world.opponent);power=0;charging=false;world.ball.visible=true;world.player.root.rotation.set(0,role==='keeper'?0:Math.PI+(world.motionInfo('kick')?.root?.[0]?.yaw||0),0);world.opponent.root.rotation.set(0,Math.PI,0);world.setSpeed(world.player,1);world.setSpeed(world.opponent,1);world.extra.root.rotation.set(0,Math.PI/2,0);world.animate(world.player,'idle');world.animate(world.opponent,'idle');world.animate(world.extra,'idle');if(role==='player'){world.player.root.position.set((round%3-1)*1.5,0,3);world.opponent.root.position.set(0,0,-13.3);world.opponent.root.rotation.y=0;aim={x:round%2? -1.8:1.8,y:1.15,z:GOAL_Z};const contact=world.player.strikeContract?.contact||world.motionData?.kick?.contact||{x:.12,z:.85};const spot=shotStarts[round];world.ball.position.set(spot.x,.12,GOAL_Z+spot.distance);const heading=Math.atan2(aim.x-world.ball.position.x,aim.z-world.ball.position.z),ready=strikeRoot(world.ball.position,heading,contact,chosen.height/1.87);world.player.root.position.set(ready.x,0,ready.z);world.player.root.rotation.y=heading+(world.motionInfo('kick')?.root?.[0]?.yaw||0);world.aim.position.set(aim.x,aim.y,GOAL_Z+.05)}else if(role==='keeper'){world.player.root.position.set(0,0,-13.2);world.opponent.root.position.set((round%3-1)*2,0,-1);const contact=world.opponent.strikeContract?.contact||world.motionData?.kick?.contact||{x:0,z:.6};world.ball.position.set(world.opponent.root.position.x-contact.x*world.opponent.height/1.87,.12,world.opponent.root.position.z-contact.z*world.opponent.height/1.87)}else{world.player.root.position.set(3.8,0,.5);world.player.root.rotation.y=-Math.PI/2;placeRefScene(0);$('#foul').disabled=true;$('#play-on').disabled=true}announce('准备好了吗？',role==='player'?'本轮射门位置已就绪，瞄准后蓄力射门':role==='keeper'?'观察来球，随时准备扑救':'跟上球员，留意争球时的接触',`ROUND ${round+1}`);updateScore();updatePower()}
 function finishRound(win,title,detail){if(phase==='feedback'||phase==='done')return;results.push(win);if(win)score++;phase='feedback';phaseT=0;cancelCharge();world.aim.visible=false;if(diveT<0||role!=='keeper')world.setSpeed(world.player,1);if(diveT<0||role!=='player')world.setSpeed(world.opponent,1);if(win||role!=='player')world.animate(world.opponent,'idle');world.crowdReaction(win);audio.crowd(win);if(role!=='referee'){world.startCutaway(win,role);$('#broadcast').hidden=false;document.body.dataset.cutaway='true';$('#broadcast-label').textContent=win?'球星特写':'场边镜头';}announce(title,detail,win?'WELL PLAYED':'NEXT CHANCE');updateScore();if(role==='player'){world.player.reactionName=win?'reactgoal':'reactmiss';if(!world.player.strike){world.animate(world.player,world.player.reactionName,true,true);world.player.reactionUntil=worldTime+2.8;}}}
 function finishMatch(){phase='done';go('results');const max=roles[role].max;$('#result-title').textContent=score===max?'全场，为你沸腾。':score>=Math.ceil(max*.6)?'精彩表现！':'下一场，更进一步。';$('#result-score').innerHTML=`${score} <span>/ ${max}</span>`;$('#result-desc').textContent=role==='player'?`${chosen.name}完成 ${max} 次射门，打进 ${score} 球。${score<max?'试着换个角度，把球送进远角。':'每一次机会，你都把握住了。'}`:role==='keeper'?`你成功守住了 ${score} 次来球。${score<max?'提早移动，最后一刻再扑救。':'这座球门，由你守护。'}`:`你作出了 ${score} 次正确判罚。${score<max?'留意防守队员先碰到的是球，还是对手。':'清晰判断，让比赛更精彩。'}`;audio.whistle()}
 function beginAction(input='Space'){
@@ -293,6 +309,7 @@ function startDive(keeper,direction,profile=lowDive,distance=profile.distance){
  if(diveT>=0||!keeperCanDive(keeper))return;
  diveT=0;
  diveDir=direction;
+ beginDivePlant(keeper,direction);
  keeper.root.rotation.y=0;
  const position=keeper.root.position;
  keeper.diveReach={
@@ -302,12 +319,7 @@ function startDive(keeper,direction,profile=lowDive,distance=profile.distance){
   profile
  };
  if(keeper===world.player)velocity.x=0;
- if(direction===0){
-  world.setSpeed(keeper,1);
-  world.animate(keeper,'idle');
-  return;
- }
- const action=direction>0?'divemirror':'dive';
+ const action=direction===0?'jumpsave':direction>0?'divemirror':'dive';
  const duration=keeper.actions[action]?.getClip().duration||.86;
  world.setSpeed(keeper,duration/KEEPER_DIVE_SECONDS);
  world.animate(keeper,action,true,true);
@@ -317,15 +329,17 @@ function advanceDive(keeper,dt){
  const previous=clamp(diveT/KEEPER_DIVE_SECONDS,0,1);
  diveT+=dt;
  const progress=clamp(diveT/KEEPER_DIVE_SECONDS,0,1);
- keeper.diveReach.weight=Math.min(clamp(progress/.22,0,1),clamp((1-progress)/.25,0,1));
+ keeper.diveReach.progress=progress;
+ keeper.diveReach.weight=diveEnvelope(progress).reach;
  const {profile,distance}=keeper.diveReach;
- const travel=t=>profile.quickPush?t*t*(6+t*(-8+3*t)):t*t*(3-2*t);
+ const travel=t=>diveEnvelope(t).travel;
  keeper.root.position.x=clamp(keeper.root.position.x+diveDir*distance*(travel(progress)-travel(previous)),-4,4);
- keeper.root.position.y=profile.lift*Math.sin(progress*Math.PI);
- keeper.root.rotation.z=-diveDir*profile.tilt*Math.sin(progress*Math.PI);
+ keeper.root.position.y=profile.lift*diveEnvelope(progress).flight;
+ keeper.root.rotation.z=0; // Pelvis animation owns body tilt; do not apply it twice.
  if(progress===1){
   diveT=-1;
   keeper.diveReach=null;
+  keeper.divePlant=null;
   keeper.diveRecoveryLeft=KEEPER_RECOVERY_SECONDS;
   keeper.root.position.y=0;
   keeper.root.rotation.z=0;

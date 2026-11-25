@@ -10,7 +10,7 @@ export const players=[
 ];
 
 const heights={yamal:1.80,ronaldo:1.87,courtois:1.99,messi:1.70,mbappe:1.78,haaland:1.94,neymar:1.75,bellingham:1.86};
-for(const p of players){p.height=heights[p.id];p.image=p.id==='yamal'?'assets/yamal-card-portrait.png':p.id==='ronaldo'?'assets/ronaldo-holo-portrait.png':'../game/assets/'+(p.id==='messi'?'messi-photo.jpg':p.id+'.png');p.model=p.id==='courtois'?'assets/courtois-game-v4.glb':p.id==='bellingham'?'assets/bellingham-game-v1.glb':p.id==='messi'?'assets/messi-game-v1.glb':p.id==='mbappe'?'assets/mbappe-game-v3.glb':p.id==='neymar'?'assets/neymar-game-v2.glb':p.id==='yamal'?'assets/yamal-playable-v1.glb':p.id==='ronaldo'?'assets/ronaldo-anatomy-v8.glb':'assets/players/'+p.id+'.glb'}
+for(const p of players){p.height=heights[p.id];p.image=p.id==='yamal'?'assets/yamal-card-portrait.png':p.id==='ronaldo'?'assets/ronaldo-holo-portrait.png':'../game/assets/'+(p.id==='messi'?'messi-photo.jpg':p.id+'.png');p.model=p.id==='haaland'?'assets/haaland-game-v1.glb':p.id==='courtois'?'assets/courtois-game-v4.glb':p.id==='bellingham'?'assets/bellingham-game-v1.glb':p.id==='messi'?'assets/messi-game-v1.glb':p.id==='mbappe'?'assets/mbappe-game-v3.glb':p.id==='neymar'?'assets/neymar-game-v2.glb':p.id==='yamal'?'assets/yamal-playable-v1.glb':p.id==='ronaldo'?'assets/ronaldo-anatomy-v8.glb':'assets/players/'+p.id+'.glb'}
 
 const roles={ronaldo:'前锋',yamal:'右边锋',courtois:'门将',messi:'前锋',mbappe:'前锋',haaland:'中锋',neymar:'边锋',bellingham:'中场'};
 export function loadPortrait(image,source){

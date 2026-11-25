@@ -1,3 +1,4 @@
+import {biomechanicalKeeperClips,applyDivePlant} from './keeper-biomechanics.js?v=1';
 import {yamalKeeperClips} from './keeper-retarget.js?v=1';
 import {resetKeeperGround,keepKeeperAboveGround} from './keeper-ground.js?v=3';
 import {updateUpperArmVolume} from './shoulder-deformation.js?v=8';
@@ -46,20 +47,21 @@ export class FootballWorld{
   }
   return this.modelCache.get(url);
  }
- async loadPlayer(star,onProgress){
+ async loadPlayer(star,onProgress,lineup={}){
   onProgress(5);
   const serial=(this.loadSerial||0)+1;
   this.loadSerial=serial;
   let finished=0;
   const progress=()=>{
-   if(serial===this.loadSerial)onProgress(5+Math.round(++finished*85/5));
+   if(serial===this.loadSerial)onProgress(5+Math.round(++finished*85/7));
   };
   const motionModel=this.getModel('assets/ronaldo-natural.glb');
   const keeperReference=await this.getModel('assets/yamal-playable-v1.glb');
   if(serial!==this.loadSerial)return;
   this.keeperReference=keeperReference;
-  const opponentId=star.id==='courtois'?'mbappe':'courtois';
-  const opponent=this.getModel(opponentId==='courtois'?'assets/courtois-game-v4.glb':`assets/players/${opponentId}.glb`).catch(()=>motionModel);
+  const opponentStar=lineup.opponent||{id:'courtois',height:1.99,model:'assets/courtois-game-v4.glb'};
+  const opponent=this.getModel(opponentStar.model);
+  const extraModel=lineup.extra?this.getModel(lineup.extra.model):motionModel;
   const reactions=this.getModel('assets/crowd/fan-1-lod.glb').catch(()=>null);
   const readContract=url=>fetch(url,{signal:AbortSignal.timeout?.(15000)})
    .then(response=>response.ok?response.json():null).catch(()=>null);
@@ -67,17 +69,23 @@ export class FootballWorld{
    readContract('assets/mocap-contract.json?v=3j'),
    readContract('assets/strike-contract.json'),
    readContract('assets/ronaldo-independent-contract.json'),
-   star.id==='courtois'?readContract('assets/courtois-game-v4-contact.json'):star.id==='bellingham'?readContract('assets/bellingham-game-v1-contact.json'):star.id==='messi'?readContract('assets/messi-game-v1-contact.json'):star.id==='mbappe'?readContract('assets/mbappe-game-v1-contact.json'):star.id==='neymar'?readContract('assets/neymar-game-v2-contact.json'):star.id==='yamal'?readContract('assets/yamal-playable-v1-contact.json'):Promise.resolve(null)
+   star.id==='haaland'?readContract('assets/haaland-game-v1-contact.json'):star.id==='courtois'?readContract('assets/courtois-game-v4-contact.json'):star.id==='bellingham'?readContract('assets/bellingham-game-v1-contact.json'):star.id==='messi'?readContract('assets/messi-game-v1-contact.json'):star.id==='mbappe'?readContract('assets/mbappe-game-v1-contact.json'):star.id==='neymar'?readContract('assets/neymar-game-v2-contact.json'):star.id==='yamal'?readContract('assets/yamal-playable-v1-contact.json'):Promise.resolve(null)
   ]);
-  const [source,ronaldo,npc,emotions,[motionData,strikeContract,independentContract,yamalContract]]=await Promise.all(
-   [this.getModel(star.model),motionModel,opponent,reactions,contracts].map(async request=>{
+  const [source,ronaldo,npc,emotions,[motionData,strikeContract,independentContract,yamalContract],extraSource,npcContracts]=await Promise.all(
+   [this.getModel(star.model),motionModel,opponent,reactions,contracts,extraModel,Promise.all([opponentStar,lineup.extra].map(async p=>{
+    if(!p)return null;
+    const url=p.id==='ronaldo'?'assets/ronaldo-independent-contract.json':p.id==='mbappe'?'assets/mbappe-game-v1-contact.json':p.model.replace(/\.glb$/,'-contact.json');
+    const contract=await readContract(url);
+    if(!contract)throw new Error('对手触球数据加载失败');
+    return contract;
+   }))].map(async request=>{
     const result=await request;
     progress();
     return result;
    })
   );
   if(serial!==this.loadSerial)return;
-  if((star.id==='yamal'||star.id==='neymar'||star.id==='mbappe'||star.id==='messi'||star.id==='bellingham'||star.id==='courtois')&&!yamalContract)throw new Error('角色触球数据加载失败，请重试');
+  if((star.id==='yamal'||star.id==='neymar'||star.id==='mbappe'||star.id==='messi'||star.id==='bellingham'||star.id==='courtois'||star.id==='haaland')&&!yamalContract)throw new Error('角色触球数据加载失败，请重试');
   this.motionData=motionData;
   this.independentContract=independentContract;
   if(strikeContract)this.strikeContract=strikeContract;
@@ -107,20 +115,21 @@ export class FootballWorld{
   if(star.id==='ronaldo'||star.id==='yamal'){const ownDive=source.animations.find(c=>c.name==='Dive_Ronaldo_Rig');if(ownDive&&!source.animations.some(c=>c.name==='DiveMirror'))source.animations.push(mirrorKeeperDive(ownDive));}
   this.player=this.addActor(source,star.height,false,star.id);
   if(star.id==='ronaldo')this.player.strikeContract=independentContract;
-  if(star.id==='yamal'||star.id==='neymar'||star.id==='mbappe'||star.id==='messi'||star.id==='bellingham'||star.id==='courtois')this.player.strikeContract=yamalContract;
-  if(star.id==='neymar'||star.id==='mbappe'||star.id==='messi'||star.id==='bellingham'||star.id==='courtois')this.player.motionData=yamalContract;
-  this.opponent=this.addActor(npc,npc===ronaldo?1.87:star.id==='courtois'?1.78:1.99,true,npc!==ronaldo&&opponentId==='courtois'?'courtois':null);
-  this.extra=this.addActor(ronaldo,1.87,true);
+  if(star.id==='yamal'||star.id==='neymar'||star.id==='mbappe'||star.id==='messi'||star.id==='bellingham'||star.id==='courtois'||star.id==='haaland')this.player.strikeContract=yamalContract;
+  if(star.id==='neymar'||star.id==='mbappe'||star.id==='messi'||star.id==='bellingham'||star.id==='courtois'||star.id==='haaland')this.player.motionData=yamalContract;
+  this.opponent=this.addActor(npc,opponentStar.height,true,opponentStar.id);
+  this.extra=this.addActor(extraSource,lineup.extra?.height||1.87,true,lineup.extra?.id||'ronaldo');
+  [this.opponent,this.extra].forEach((actor,i)=>{if(npcContracts[i]){actor.strikeContract=npcContracts[i];if(!actor.ronaldo&&!actor.yamal)actor.motionData=npcContracts[i];}});
   this.opponent.root.visible=false;
   this.extra.root.visible=false;
   onProgress(100);
   return source;
  }
- addActor(source,height=1.87,npc=false,playerId=null){const ronaldo=playerId==='ronaldo',yamal=playerId==='yamal',neymar=playerId==='neymar',mbappe=playerId==='mbappe',messi=playerId==='messi',bellingham=playerId==='bellingham',courtois=playerId==='courtois';const model=clone(source.scene),independentYamal=yamal&&source.animations.some(c=>c.name==='Kick');if(ronaldo&&!model.getObjectByProperty('name','CR7_Approved_Body'))refineRonaldoMatchModel(model);const bounds=new THREE.Box3().setFromObject(model),scale=height/(bounds.max.y-bounds.min.y);model.scale.multiplyScalar(scale);model.position.y=-bounds.min.y*scale;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material=o.material.clone();if(o.userData.approvedPortrait||independentYamal||neymar||mbappe||messi||bellingham||courtois){o.material.userData.baseColor=o.material.color.getHex();return;}if(ronaldo||yamal)fitPlayerLandmarks(o,playerId);if(yamal)styleYamalMaterial(o.material);if(/shirt_front_number|shirt_back_number|shirt_back_name|short_number|shirt_crest/.test(o.name)){o.geometry=o.geometry.clone();const position=o.geometry.attributes.position,normal=o.geometry.attributes.normal;if(normal)for(let i=0;i<position.count;i++){position.setXYZ(i,position.getX(i)+normal.getX(i)*.003,position.getY(i)+normal.getY(i)*.003,position.getZ(i)+normal.getZ(i)*.003);}o.material.polygonOffset=true;o.material.polygonOffsetFactor=-2;o.material.polygonOffsetUnits=-2;}o.material.userData.baseColor=o.material.color.getHex();o.material.roughness=/eye|iris|pupil/i.test(o.name)?Math.max(.22,o.material.roughness??.3):Math.max(.5,o.material.roughness??.7);if(/jersey|short|sock/i.test(o.material.name)){o.material.bumpMap=this.fabric;o.material.bumpScale=.0012;o.material.roughness=.9}if(npc&&/shirt|jersey|kit|short|sock/i.test(o.material.name))o.material.color.set(0x264c86);this.appearance.apply(o);if(ronaldo&&o.material.name==='eyes_white')o.material.color.multiplyScalar(.76);if(ronaldo&&/^boot/.test(o.name)){this.cr7BootTexture??=createCR7BootTexture();styleCR7Boot(o,this.cr7BootTexture);}addUniformDetail(o,yamal);if(ronaldo&&o.material.name==='Face_reference')softenRonaldoFaceMaterial(o.material)}}});const root=new THREE.Group();root.add(model);this.scene.add(root);const sharedDives=courtois?source.animations.filter(c=>/^Dive(?:Mirror)?$/.test(c.name)):yamalKeeperClips(this.keeperReference,source.scene);source={...source,animations:[...source.animations.filter(c=>!/^Dive(?:Mirror|_Ronaldo_Rig)?$/i.test(c.name)),...sharedDives]};const mixer=new THREE.AnimationMixer(model),actions={};for(const {clip:original,local} of actorMotions(this.motionClips,(ronaldo||independentYamal||neymar||mbappe||messi||bellingham||courtois)?source:{animations:sharedDives})){if((neymar||mbappe||messi||bellingham||courtois)&&!local&&/^React(Goal|Miss)$/i.test(original.name))continue;const clip=original.clone();clip.name=clip.name.replace(/_Ronaldo_Rig$/,'');clip.tracks=clip.tracks.filter(t=>!t.name.endsWith('.scale'));for(const t of clip.tracks){if(local||!t.name.endsWith('.position'))continue;const name=t.name.slice(0,-9),from=(local?source.scene:original.name.startsWith('React')?this.emotionSource:this.motionSource)?.getObjectByName(name),to=model.getObjectByName(name);if(from&&to)for(let i=0;i<t.values.length;i+=3){t.values[i]+=to.position.x-from.position.x;t.values[i+1]+=to.position.y-from.position.y;t.values[i+2]+=to.position.z-from.position.z}}actions[clip.name.toLowerCase()]=mixer.clipAction(clip)};if(ronaldo&&actions.kick){
+ addActor(source,height=1.87,npc=false,playerId=null){const ronaldo=playerId==='ronaldo',yamal=playerId==='yamal',neymar=playerId==='neymar',mbappe=playerId==='mbappe',messi=playerId==='messi',bellingham=playerId==='bellingham',courtois=playerId==='courtois',haaland=playerId==='haaland';const model=clone(source.scene),independentYamal=yamal&&source.animations.some(c=>c.name==='Kick');if(ronaldo&&!model.getObjectByProperty('name','CR7_Approved_Body'))refineRonaldoMatchModel(model);const bounds=new THREE.Box3().setFromObject(model),scale=height/(bounds.max.y-bounds.min.y);model.scale.multiplyScalar(scale);model.position.y=-bounds.min.y*scale;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material=o.material.clone();if(o.userData.approvedPortrait||independentYamal||neymar||mbappe||messi||bellingham||courtois||haaland){o.material.userData.baseColor=o.material.color.getHex();return;}if(ronaldo||yamal)fitPlayerLandmarks(o,playerId);if(yamal)styleYamalMaterial(o.material);if(/shirt_front_number|shirt_back_number|shirt_back_name|short_number|shirt_crest/.test(o.name)){o.geometry=o.geometry.clone();const position=o.geometry.attributes.position,normal=o.geometry.attributes.normal;if(normal)for(let i=0;i<position.count;i++){position.setXYZ(i,position.getX(i)+normal.getX(i)*.003,position.getY(i)+normal.getY(i)*.003,position.getZ(i)+normal.getZ(i)*.003);}o.material.polygonOffset=true;o.material.polygonOffsetFactor=-2;o.material.polygonOffsetUnits=-2;}o.material.userData.baseColor=o.material.color.getHex();o.material.roughness=/eye|iris|pupil/i.test(o.name)?Math.max(.22,o.material.roughness??.3):Math.max(.5,o.material.roughness??.7);if(/jersey|short|sock/i.test(o.material.name)){o.material.bumpMap=this.fabric;o.material.bumpScale=.0012;o.material.roughness=.9}if(npc&&/shirt|jersey|kit|short|sock/i.test(o.material.name))o.material.color.set(0x264c86);this.appearance.apply(o);if(ronaldo&&o.material.name==='eyes_white')o.material.color.multiplyScalar(.76);if(ronaldo&&/^boot/.test(o.name)){this.cr7BootTexture??=createCR7BootTexture();styleCR7Boot(o,this.cr7BootTexture);}addUniformDetail(o,yamal);if(ronaldo&&o.material.name==='Face_reference')softenRonaldoFaceMaterial(o.material)}}});const root=new THREE.Group();root.add(model);this.scene.add(root);const sharedDives=biomechanicalKeeperClips(source.scene,[-1,1,0]);source={...source,animations:[...source.animations.filter(c=>!/^Dive(?:Mirror|_Ronaldo_Rig)?$/i.test(c.name)),...sharedDives]};const mixer=new THREE.AnimationMixer(model),actions={};for(const {clip:original,local} of actorMotions(this.motionClips,(ronaldo||independentYamal||neymar||mbappe||messi||bellingham||courtois||haaland)?source:{animations:sharedDives})){if((neymar||mbappe||messi||bellingham||courtois||haaland)&&!local&&/^React(Goal|Miss)$/i.test(original.name))continue;const clip=original.clone();clip.name=clip.name.replace(/_Ronaldo_Rig$/,'');clip.tracks=clip.tracks.filter(t=>!t.name.endsWith('.scale'));for(const t of clip.tracks){if(local||!t.name.endsWith('.position'))continue;const name=t.name.slice(0,-9),from=(local?source.scene:original.name.startsWith('React')?this.emotionSource:this.motionSource)?.getObjectByName(name),to=model.getObjectByName(name);if(from&&to)for(let i=0;i<t.values.length;i+=3){t.values[i]+=to.position.x-from.position.x;t.values[i+1]+=to.position.y-from.position.y;t.values[i+2]+=to.position.z-from.position.z}}actions[clip.name.toLowerCase()]=mixer.clipAction(clip)};if(ronaldo&&actions.kick){
   const fullKick=actions.kick.getClip();
   const quickKick=THREE.AnimationUtils.subclip(fullKick,'KickQuick',Math.round(QUICK_KICK_START*60),Math.ceil(fullKick.duration*60)+1,60);
   actions.kickquick=mixer.clipAction(quickKick);
- }const actor={root,model,mixer,actions,current:null,ronaldo,yamal,neymar,mbappe,messi,bellingham,courtois,height,speed:1,head:model.getObjectByName('head'),neck:model.getObjectByName('neck_01'),lookYaw:0,lookPitch:0};actor.facial=(neymar||mbappe||messi||bellingham||courtois)?null:new FacialPerformance(actor);this.actors.push(actor);this.animate(actor,'idle');return actor}
+ }const actor={root,model,mixer,actions,current:null,ronaldo,yamal,neymar,mbappe,messi,bellingham,courtois,haaland,height,speed:1,head:model.getObjectByName('head'),neck:model.getObjectByName('neck_01'),lookYaw:0,lookPitch:0};actor.facial=(neymar||mbappe||messi||bellingham||courtois||haaland)?null:new FacialPerformance(actor);this.actors.push(actor);this.animate(actor,'idle');return actor}
  motionInfo(name,actor=this.player){if(name==='stop')name='runstop';const clips=(actor?.motionData||this.motionData)?.clips;if(!clips)return null;return Array.isArray(clips)?clips.find(c=>c.name.toLowerCase()===name.toLowerCase()):clips[name]||clips[Object.keys(clips).find(k=>k.toLowerCase()===name.toLowerCase())];}
  animate(actor,name,once=false,restart=false){
   if(!actor)return;if(name==='stop')name='runstop';const key=Object.keys(actor.actions).find(k=>k===name.toLowerCase())||Object.keys(actor.actions).find(k=>k.includes(name));if(!key)return;
@@ -180,6 +189,7 @@ export class FootballWorld{
   resetKeeperGround(actor);actor.facial?.restore();
   actor.mixer.update(dt);
   this.attention(actor,dt);
+  if(actor.diveReach)applyDivePlant(actor,actor.diveReach.progress??0);
   let reach=actor.diveReach??actor.readyReach;
   const held=actor.heldBall;
   if(held){

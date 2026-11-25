@@ -12,8 +12,9 @@ export function keepKeeperAboveGround(actor){
   actor.model.traverse(mesh=>{
    if(!mesh.isSkinnedMesh)return;
    const p=mesh.geometry.attributes.position,indices=[];
-   for(let i=0;i<p.count;i++){const v=new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);if(v.y<actor.root.position.y+.18)indices.push(i);}
-   // Include all sole vertices; feet are a small fraction of this mesh.
+   for(let i=0;i<p.count;i++){const v=new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);if(v.y<actor.root.position.y+.18||i%12===0)indices.push(i);}
+   // Sample the entire body as well as every sole vertex: lateral landings can
+   // contact hip, ribs or forearm before the feet.
    actor.soleSamples.push({mesh,indices});
   });
  }
